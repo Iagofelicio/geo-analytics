@@ -68,7 +68,7 @@ Ideally, you would use a paid version of some of the Geo IP Providers suggested,
 
 Be aware that requests are stored at the time they occur, but do not trigger processing so as not to affect page load time. The background commands are responsible for handling new requests.
 
-It is strongly recommended to keep IP Cache enabled. Geographic details of IPs that have already accessed the website once will be pre-stored to avoid consuming any quotas from Geo IP Providers.
+It is strongly recommended to **keep IP Cache enabled**. Geographic details of IPs that have already accessed the website once will be pre-stored to avoid consuming any quotas from Geo IP Providers.
 
 ## Changelog
 
