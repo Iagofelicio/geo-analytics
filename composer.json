@@ -1,0 +1,43 @@
+{
+    "name": "iagofelicio/geo-analytics",
+    "autoload": {
+        "psr-4": {
+            "Iagofelicio\\GeoAnalytics\\": "src"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Iagofelicio\\GeoAnalytics\\Tests\\": "tests"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "require": {
+        "statamic/cms": "^5.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "Geo Analytics",
+            "description": "Geo Analytics addon"
+        },
+        "laravel": {
+            "providers": [
+                "Iagofelicio\\GeoAnalytics\\ServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
