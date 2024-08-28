@@ -70,10 +70,6 @@ Be aware that requests are stored at the time they occur, but do not trigger pro
 
 It is strongly recommended to **keep IP Cache enabled**. Geographic details of IPs that have already accessed the website once will be pre-stored to avoid consuming any quotas from Geo IP Providers.
 
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
 ## Contributions
 
 Do you have any ideas on how to improve this add-on? Create an issue on Github and I'll try to analyze all cases and suggestions as soon as possible.

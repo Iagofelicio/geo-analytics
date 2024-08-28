@@ -20,8 +20,8 @@
             </div>
             <div class="grid justify-items-end items-center	">
                 <div class="text-[12px] text-right">
-                    <span id="statusGeoAnalytics" class="!text-slate-800 !dark:text-slate-150"></span>&nbsp;&nbsp;&nbsp;
-                    <span id="latestUpdate" class="!text-slate-800 !dark:text-slate-150"></span>
+                    <p><span id="statusGeoAnalytics"></span>&nbsp;&nbsp;&nbsp;
+                    <span id="latestUpdate"></span></p>
                 </div>
             </div>
           </div>

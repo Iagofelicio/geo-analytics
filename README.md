@@ -6,11 +6,11 @@
 
 ## Geo Analytics is a Commercial Addon.
 
-You can use it for free while in development, but requires a license to use on a live site. Learn more or buy a license on [The Statamic Marketplace](https://statamic.com/addons/statamic/XXXXXX)!
+You can use it for free while in development, but requires a license to use on a live site. Learn more or buy a license on [The Statamic Marketplace](https://statamic.com/addons/ol4mundo/geo-analytics)!
 
 ## Documentation
 
-Read the docs on the [Statamic Marketplace](https://statamic.com/addons/statamic/XXXXXX/docs) or contribute to it [here on GitHub](DOCUMENTATION.md).
+Read the docs on the [Statamic Marketplace](https://statamic.com/addons/ol4mundo/geo-analytics) or contribute to it [here on GitHub](DOCUMENTATION.md).
 
 
 ## Credits
