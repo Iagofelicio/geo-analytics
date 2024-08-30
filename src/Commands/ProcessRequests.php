@@ -291,8 +291,17 @@ class ProcessRequests extends Command
             $counter = 0;
             $totalIpsRequested = 0;
             $totalFilesProcessed = 0;
+            $blacklist = Yaml::parseFile(geo_storage_path("requests/blacklist.yaml"));
+
             foreach($listFiles as $idx => $file) {
                 $contents = Yaml::parseFile($file->getPathname());
+                if(isset($blacklist)){
+                    if(in_array($contents['ip'],$blacklist)){
+                        $filesystem->move($file->getPathname(), str_replace('unprocessed','processed',$file->getPathname()));
+                        continue;
+                    }
+                }
+
                 $date = DateTime::createFromFormat('U', $contents['t']);
                 $contents['dateStr'] = $date->format("Y-m-d H:i:s");
 

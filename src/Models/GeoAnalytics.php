@@ -154,6 +154,11 @@ class GeoAnalytics
         file_put_contents(geo_storage_path('tracking'),'Tracking requests');
         chown(geo_storage_path('tracking'), $user);
         chgrp(geo_storage_path('tracking'), $group);
+
+        file_put_contents(geo_storage_path('requests/blacklist.yaml'),[]);
+        chown(geo_storage_path('requests/blacklist.yaml'), $user);
+        chgrp(geo_storage_path('requests/blacklist.yaml'), $group);
+
     }
 
     /**
@@ -308,6 +313,9 @@ class GeoAnalytics
                         if(isset($dataset[$timerange]['data'][$ip]['requests'][$status])){
                             $dataset[$timerange]['data'][$ip]['requests'][$status]++;
                         } else {
+                            $dataset[$timerange]['data'][$ip]['location']['countryCode'] = $ipDetails['countryCode'];
+                            $dataset[$timerange]['data'][$ip]['location']['country'] = $ipDetails['country'];
+                            $dataset[$timerange]['data'][$ip]['location']['city'] = $ipDetails['city'];
                             $dataset[$timerange]['data'][$ip]['requests'][$status] = 1;
                         }
                     }
@@ -329,6 +337,9 @@ class GeoAnalytics
                         if(isset($dataset[$timerange]['data'][$ip]['requests'][$status])){
                             $dataset[$timerange]['data'][$ip]['requests'][$status]++;
                         } else {
+                            $dataset[$timerange]['data'][$ip]['location']['countryCode'] = $ipDetails['countryCode'];
+                            $dataset[$timerange]['data'][$ip]['location']['country'] = $ipDetails['country'];
+                            $dataset[$timerange]['data'][$ip]['location']['city'] = $ipDetails['city'];
                             $dataset[$timerange]['data'][$ip]['requests'][$status] = 1;
                         }
                     }
@@ -350,6 +361,9 @@ class GeoAnalytics
                         if(isset($dataset[$timerange]['data'][$ip]['requests'][$status])){
                             $dataset[$timerange]['data'][$ip]['requests'][$status]++;
                         } else {
+                            $dataset[$timerange]['data'][$ip]['location']['countryCode'] = $ipDetails['countryCode'];
+                            $dataset[$timerange]['data'][$ip]['location']['country'] = $ipDetails['country'];
+                            $dataset[$timerange]['data'][$ip]['location']['city'] = $ipDetails['city'];
                             $dataset[$timerange]['data'][$ip]['requests'][$status] = 1;
                         }
                     }
@@ -377,6 +391,9 @@ class GeoAnalytics
                     if(isset($dataset[$timerange]['data'][$ip]['requests'][$status])){
                         $dataset[$timerange]['data'][$ip]['requests'][$status]++;
                     } else {
+                        $dataset[$timerange]['data'][$ip]['location']['countryCode'] = $ipDetails['countryCode'];
+                        $dataset[$timerange]['data'][$ip]['location']['country'] = $ipDetails['country'];
+                        $dataset[$timerange]['data'][$ip]['location']['city'] = $ipDetails['city'];
                         $dataset[$timerange]['data'][$ip]['requests'][$status] = 1;
                     }
                 } else {

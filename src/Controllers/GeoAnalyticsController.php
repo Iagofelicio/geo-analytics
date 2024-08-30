@@ -9,6 +9,7 @@ use DivisionByZeroError;
 use Illuminate\Http\Request;
 use Illuminate\Support\Number;
 use Statamic\Facades\CP\Toast;
+use Composer\InstalledVersions;
 use Symfony\Component\Yaml\Yaml;
 use Illuminate\Filesystem\Filesystem;
 use Statamic\Http\Controllers\Controller;
@@ -52,6 +53,14 @@ class GeoAnalyticsController extends Controller
             return ['profile' => null];
         }
         $profile = Yaml::parseFile(geo_storage_path("profile.yaml"));
+
+        $packageLatestVersionInfo = json_decode(file_get_contents("https://repo.packagist.org/p2/iagofelicio/geo-analytics.json"), true);
+        $packageLatestVersion = $packageLatestVersionInfo['packages']['iagofelicio/geo-analytics'][0]['version'];
+        $packageCurrentVersion = InstalledVersions::getPrettyVersion('iagofelicio/geo-analytics');
+
+        $profile['version']['current'] = $packageCurrentVersion;
+        $profile['version']['latest'] = $packageLatestVersion;
+        $profile['version']['updated'] = ($packageCurrentVersion == $packageLatestVersion);
 
         return ["profile" => $profile];
     }
@@ -248,6 +257,135 @@ class GeoAnalyticsController extends Controller
             'cities' => $citiesInfo,
             'dates' => $citiesRaw[$timerange]['dates'],
             'download' => $citiesRaw['all']['data'] ? true : false
+        ];
+    }
+
+    public function changeIpStatus(Request $request)
+    {
+        $ip = $request['ip'];
+        $status = $request['status'];
+        $blacklist = Yaml::parseFile(geo_storage_path("requests/blacklist.yaml"));
+        if($status == "block"){
+            if(!in_array($ip,$blacklist)){
+                $blacklist[] = $ip;
+            }
+        } elseif($status == "track"){
+            if(in_array($ip,$blacklist)){
+                $key = array_search($ip,$blacklist);
+                unset($blacklist[$key]);
+            }
+        } else {
+            return false;
+        }
+        file_put_contents(geo_storage_path('requests/blacklist.yaml'), Yaml::dump($blacklist));
+
+        return true;
+    }
+
+    public function ipsData($timerange)
+    {
+
+        if(!file_exists(geo_storage_path("requests/analytics/ips.json"))){
+            return [
+                'dates' => null,
+                'download' => false
+            ];
+        }
+
+        $ipsRaw = json_decode(file_get_contents(geo_storage_path("requests/analytics/ips.json")),true);
+        if(!isset($ipsRaw[$timerange]['data'])){
+            return [
+                'dates' => null,
+                'download' => $ipsRaw['all']['data'] ? true : false
+            ];
+        }
+
+        $blacklist = Yaml::parseFile(geo_storage_path("requests/blacklist.yaml"));
+
+        $ipsTable = [];
+        $columnsIps = [];
+        $columnsIps[] = ['title' => "IP"];
+        $columnsIps[] = ['title' => 'Location'];
+        $columnsIps[] = ['title' => 'Total'];
+        $columnsIps[] = ['title' => 'Total
+            <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
+                <span class="text-gray-800 dark:text-dark-150 font-medium">200</span>
+            </span>
+        '];
+        $columnsIps[] = ['title' => 'Success Rate'];
+        $columnsIps[] = ['title' => 'Status'];
+        $columnsIps[] = ['title' => 'Actions'];
+
+        $ipsTable = [];
+        foreach($ipsRaw[$timerange]['data'] as $ip => $data){
+            try{
+                $calc = (($data['requests']['200'] ?? 0) / array_sum($data['requests']))*100;
+            } catch (DivisionByZeroError $e) {
+                $calc = 0;
+            }
+
+            if(isset($blacklist)){
+                if(!in_array($ip,$blacklist)){
+                    $status = '
+                        <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm" style="background-color: #b9e0ba">
+                            <span class="text-gray-800 font-medium">Monitoring</span>
+                        </span>
+                    ';
+                    $btn1 = '
+                        <button onclick="changeIpStatus(\''.$ip.'\',\'block\')" class="btn btn-sm text-[10px]">
+                            Disable
+                        </button>
+                    ';
+
+                } else {
+                    $status = '
+                        <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm" style="background-color: #ec9f9f">
+                            <span class="text-gray-800 font-medium">Blocked</span>
+                        </span>
+                    ';
+                    $btn1 = '
+                        <button onclick="changeIpStatus(\''.$ip.'\',\'track\')" class="btn btn-sm text-[10px]">
+                            Enable
+                        </button>
+                    ';
+
+                }
+            } else {
+                $status = '
+                    <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm" style="background-color: #b9e0ba">
+                        <span class="text-gray-800 font-medium">Monitoring</span>
+                    </span>
+                ';
+                $btn1 = '
+                    <button onclick="changeIpStatus(\''.$ip.'\',\'block\')" class="btn btn-sm text-[10px]">
+                        Disable
+                    </button>
+                ';
+            }
+            $ipsTable[$ip] = [
+                $ip,
+                $data['location']['city'] . '<br></span>' . '
+                    <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
+                        <span class="text-gray-800 dark:text-dark-150 font-medium">'. $data['location']['country'] .'</span>
+                    </span>
+                ',
+                array_sum($data['requests']),
+                $data['requests']['200'] ?? 0,
+                Number::percentage($calc, precision: 2),
+                $status,
+                "$btn1"
+            ];
+        }
+
+        $ipsInfo = [
+            "columns" => $columnsIps,
+            "data" => array_values($ipsTable),
+            "sorting" => [[2,'desc']]
+        ];
+        return [
+            'ips' => $ipsInfo,
+            'dates' => $ipsRaw[$timerange]['dates'],
+            'download' => $ipsRaw['all']['data'] ? true : false
         ];
     }
 

@@ -20,7 +20,8 @@
             </div>
             <div class="grid justify-items-end items-center	">
                 <div class="text-[12px] text-right">
-                    <p><span id="statusGeoAnalytics"></span>&nbsp;&nbsp;&nbsp;
+                    <p><span id="versionGeoAnalytics"></span>&nbsp;&nbsp;&nbsp;
+                    <span id="statusGeoAnalytics"></span>&nbsp;&nbsp;&nbsp;
                     <span id="latestUpdate"></span></p>
                 </div>
             </div>
@@ -279,6 +280,51 @@
                 </div>
                 <div class="text-[12px] pt-4">
                     <p><i id="citiesDatesMessage"></i></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pb-4">
+        <div class="mt-3 card">
+            <div class="card-header pb-4">
+                <div class="flex flex-row pb-2">
+                    <div class="w-[75%]">
+                        <div class="flex">
+                            <b>Requests by IPs</b>&nbsp;&nbsp;
+                            <span
+                                title="This table provides information about IP addresses, including their city and country locations, the total number of requests made from these IPs, the number of successful requests (HTTP status 200), the success rate, and whether the IP is currently being monitored or blocked."
+                                class="self-center rounded-full border border-gray-200 text-gray-600 px-[4px] py-[0px] text-[10px]">?
+                            </span>
+                        </div>
+                        <div class="text-[11px] pb-2">
+                            <button onclick="getIpsData('all', true)"><span id="ipSpan-all">All</span></button>&nbsp;&nbsp;
+                            <button onclick="getIpsData('today', true)"><span id="ipSpan-today">Today</span></button>&nbsp;&nbsp;
+                            <button onclick="getIpsData('week', true)"><span id="ipSpan-week">7 Days</span></button>&nbsp;&nbsp;
+                            <button onclick="getIpsData('month', true)"><span id="ipSpan-month">30 Days</span></button>&nbsp;&nbsp;
+                        </div>
+                    </div>
+                    <div class="w-[25%] text-[11px] text-right">
+                        <div id="divDownloadIps" style="display: none">
+                            <a href="{{route('statamic.cp.download',['ips'])}}" title="Download all data"><u>Download</u></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body text-[13px]">
+                <div id="divIpsEmpty" style="display: none" class="text-center text-[12px]">
+                    No data
+                </div>
+                <div id="divTableIp" style="display: none">
+                    <table id="tableIp" class="display">
+                        <thead>
+                        </thead>
+                        <tbody class="text-[12px]">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-[12px] pt-4">
+                    <p><i id="dateIpsMessage"></i></p>
                 </div>
             </div>
         </div>
@@ -674,8 +720,21 @@
                     inptIp2LocationIoEl = document.getElementById('ip2location.io');
                     inptIp2LocationIoTokenInputEl = document.getElementById('ip2location.ioTokenInput');
 
+                    addonVersionHeaderMsgEl = document.getElementById('versionGeoAnalytics');
 
                     if(response.data.profile != null){
+
+                        if(response.data.profile.version.updated == true){
+                            addonVersionHeaderMsgEl.innerHTML = `<b>Version</b>: ${response.data.profile.version.current}`
+                        } else {
+                            addonVersionHeaderMsgEl.innerHTML = `
+                            <span title="Update Avaliable: ${response.data.profile.version.latest}">
+                                <b>Version</b>: <span style="color: #ff5722"><button>${response.data.profile.version.current}</button></span>
+                            </span>
+
+                            `
+                        }
+
                         if(response.data.profile.ip_provider.alias == 'ip-api.com'){
                             inptIpApiComEl.checked = true;
                             inptApiIpNetEl.checked = false;
@@ -988,6 +1047,82 @@
             );
         }
 
+        function getIpsData(timerange, destroy){
+            if(timerange == 'all'){
+                route = "{{ route('statamic.cp.ipsData',['all']) }}"
+            } else if(timerange == 'today') {
+                route = "{{ route('statamic.cp.ipsData',['today']) }}"
+            } else if(timerange == 'week') {
+                route = "{{ route('statamic.cp.ipsData',['week']) }}"
+            } else if(timerange == 'month') {
+                route = "{{ route('statamic.cp.ipsData',['month']) }}"
+            }
+            timerangeArr = ['all','today','week','month'];
+            timerangeArr.forEach(el => {
+                span = document.getElementById(`ipSpan-${el}`)
+                if(el == timerange){
+                    span.style.fontWeight = "bold"
+                } else {
+                    span.style.fontWeight = "normal"
+                }
+            });
+
+            axios.get(route)
+                .then(function (response) {
+
+                    if(response.data.download == true){
+                        downIpsEl = document.getElementById('divDownloadIps');
+                        downIpsEl.style.display = "block";
+
+                    } else {
+                        downIpsEl = document.getElementById('divDownloadIps');
+                        downIpsEl.style.display = "none";
+                    }
+
+                    if(response.data.dates != null){
+                        tableIpEmptyEl = document.getElementById('divIpsEmpty');
+                        tableIpEmptyEl.style.display = "none";
+
+                        tableIpEl = document.getElementById('divTableIp');
+                        tableIpEl.style.display = "block";
+
+                        dateMessageEl = document.getElementById('dateIpsMessage');
+                        dateMessageEl.innerHTML = `Data from <b>${response.data.dates.start}</b> to <b>${response.data.dates.end}</b>`;
+                        if(destroy){
+                            tableIp.clear().destroy();
+                            tableIp = new DataTable('#tableIp', {
+                                columns: response.data.ips.columns,
+                                data: response.data.ips.data,
+                                scrollX: true,
+                                order: response.data.ips.sorting
+                            });
+
+                        } else {
+                            tableIp = new DataTable('#tableIp', {
+                                columns: response.data.ips.columns,
+                                data: response.data.ips.data,
+                                scrollX: true,
+                                order: response.data.ips.sorting
+                            });
+                        }
+                    } else {
+                        tableIpEmptyEl = document.getElementById('divIpsEmpty');
+                        tableIpEmptyEl.style.display = "block";
+
+                        tableIpEl = document.getElementById('divTableIp');
+                        tableIpEl.style.display = "none";
+
+                        dateMessageEl = document.getElementById('dateIpMessage');
+                        dateMessageEl.innerHTML = "";
+                    }
+                })
+                .catch(function (error) {
+                    console.error(error);
+                })
+                .finally(function () {}
+            );
+        }
+
         function getDatesData(timerange, destroy){
             if(timerange == 'all'){
                 route = "{{ route('statamic.cp.datesData',['all']) }}"
@@ -1132,6 +1267,21 @@
 
         }
 
+        function changeIpStatus(ip,status){
+            axios.post('{{ route("statamic.cp.changeIpStatus") }}', {
+                ip: ip,
+                status: status
+            })
+            .then(function (response) {
+                if(response.data == true){
+                    window.location.reload();
+                }
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+        }
+
         function plotMap(timerange){
             if(timerange == 'all'){
                 route = "{{ route('statamic.cp.geojsonDates',['all']) }}"
@@ -1197,6 +1347,7 @@
             getUriData('all', false);
             getCitiesData('all', false);
             getDatesData('all', false);
+            getIpsData('all', false);
             getCache();
             getProfile();
         });

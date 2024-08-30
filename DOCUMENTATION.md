@@ -23,6 +23,7 @@
 - Manage application cache.
 - Choose between Geo IP Providers options (currently, 3 options are offered).
 - Pause tracking of website requests and restore when necessary without removing the addon.
+- Block and enable monitoring of specific IPs
 
 ## How to Install
 
@@ -71,6 +72,15 @@ Ideally, you would use a paid version of some of the Geo IP Providers suggested,
 Be aware that requests are stored at the time they occur, but do not trigger processing so as not to affect page load time. The background commands are responsible for handling new requests.
 
 It is strongly recommended to **keep IP Cache enabled**. Geographic details of IPs that have already accessed the website once will be pre-stored to avoid consuming any quotas from Geo IP Providers.
+
+## External URLs
+
+All of the following service providers can or will be used in the application. Please be aware in case firewall restrictions need to be addressed.
+
+- Default Geo IP Provider: [http://ip-api.com](http://ip-api.com) 
+- Optional Geo IP Provider: [https://apiip.net](https://apiip.net) 
+- Optional Geo IP Provider: [https://api.ip2location.io](https://api.ip2location.io) 
+- Get your public IP (useful when developing in localhost): [https://api.myip.com](https://api.myip.com) 
 
 ## Contributions
 

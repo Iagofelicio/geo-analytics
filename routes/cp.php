@@ -9,6 +9,8 @@ Route::get('/geo-analytics/geojsonDates/{timerange}', [GeoAnalyticsController::c
 Route::get('/geo-analytics/cardsData', [GeoAnalyticsController::class, 'cardsData'])->name("cardsData");
 Route::get('/geo-analytics/citiesData/{timerange}', [GeoAnalyticsController::class, 'citiesData'])->name("citiesData");
 Route::get('/geo-analytics/datesData/{timerange}', [GeoAnalyticsController::class, 'datesData'])->name("datesData");
+Route::get('/geo-analytics/ipsData/{timerange}', [GeoAnalyticsController::class, 'ipsData'])->name("ipsData");
+Route::post('/geo-analytics/changeIpStatus', [GeoAnalyticsController::class, 'changeIpStatus'])->name("changeIpStatus");
 Route::get('/geo-analytics/uriData/{timerange}', [GeoAnalyticsController::class, 'uriData'])->name("uriData");
 Route::post('/geo-analytics/timeseriesData', [GeoAnalyticsController::class, 'timeseriesData'])->name("timeseriesData");
 Route::get('/geo-analytics/download/{datasetName}', [GeoAnalyticsController::class, 'download'])->name("download");
