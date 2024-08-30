@@ -266,13 +266,19 @@ class GeoAnalyticsController extends Controller
         $status = $request['status'];
         $blacklist = Yaml::parseFile(geo_storage_path("requests/blacklist.yaml"));
         if($status == "block"){
-            if(!in_array($ip,$blacklist)){
+            if(isset($blacklist)){
+                if(!in_array($ip,$blacklist)){
+                    $blacklist[] = $ip;
+                }
+            } else {
                 $blacklist[] = $ip;
             }
         } elseif($status == "track"){
-            if(in_array($ip,$blacklist)){
-                $key = array_search($ip,$blacklist);
-                unset($blacklist[$key]);
+            if(isset($blacklist)){
+                if(in_array($ip,$blacklist)){
+                    $key = array_search($ip,$blacklist);
+                    unset($blacklist[$key]);
+                }
             }
         } else {
             return false;
