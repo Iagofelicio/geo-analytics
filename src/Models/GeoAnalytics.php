@@ -56,35 +56,6 @@ class GeoAnalytics
         }
     }
 
-
-    /**
-     * Create required application database
-     *
-     * @return boolean
-     */
-    public static function init_db()
-    {
-        $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-        $group = (posix_getpwuid(filegroup(storage_path())))['name'];
-
-        $db = new SQLite3(geo_storage_path('geodb.sqlite'));
-        $sql = "
-            CREATE TABLE IF NOT EXISTS requests (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                t INTEGER,
-                t_str TEXT,
-                ip TEXT,
-                uri TEXT,
-                http_status INTEGER
-            );
-        ";
-        $db->exec($sql);
-
-        chown(geo_storage_path('geodb.sqlite'), $user);
-        chgrp(geo_storage_path('geodb.sqlite'), $group);
-
-    }
-
     /**
      * Get directory size in bytes
      *
@@ -165,18 +136,24 @@ class GeoAnalytics
         $user = (posix_getpwuid(fileowner(storage_path())))['name'];
         $group = (posix_getpwuid(filegroup(storage_path())))['name'];
 
+        $ipInfo = json_decode(file_get_contents('https://api.myip.com'),true);
+
         $profile = [
             'status' => true,
             'ip_provider' => [
                 'alias' => 'ip-api.com',
                 'token' => ''
             ],
-            'store_ips' => true
-
+            'store_ips' => true,
+            'my_ip' => $ipInfo['ip'] ?? 'unknown'
         ];
         file_put_contents(geo_storage_path('profile.yaml'), Yaml::dump($profile));
         chown(geo_storage_path('profile.yaml'), $user);
         chgrp(geo_storage_path('profile.yaml'), $group);
+
+        file_put_contents(geo_storage_path('tracking'),'Tracking requests');
+        chown(geo_storage_path('tracking'), $user);
+        chgrp(geo_storage_path('tracking'), $group);
     }
 
     /**
@@ -200,77 +177,89 @@ class GeoAnalytics
             }
         }
 
-        if($provider == "ip-api.com"){
-            try{
-                $ipDetailsFull = json_decode(file_get_contents("http://ip-api.com/json/$ip"), true);
-                foreach($ipKeys as $key) $ipDetails[$key] = $ipDetailsFull[$key] ?? 'unknown';
-            } catch(Exception $e) {
-                foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
-            } catch(ErrorException $e) {
-                foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
-            }
-        }
-        if($provider == "apiip.net"){
-            try{
-                $content = file_get_contents("https://apiip.net/api/check?ip=$ip&accessKey=$token");
-                $ipDetailsFull = json_decode($content, true);
-                foreach($ipKeys as $key){
-                    if($key == "country"){
-                        $ipDetails[$key] = $ipDetailsFull["countryName"] ?? 'unknown';
-                    } elseif($key == "region"){
-                        $ipDetails[$key] = $ipDetailsFull["regionCode"] ?? 'unknown';
-                    } elseif($key == "lat"){
-                        $ipDetails[$key] = $ipDetailsFull["latitude"] ?? 'unknown';
-                    } elseif($key == "lon"){
-                        $ipDetails[$key] = $ipDetailsFull["longitude"] ?? 'unknown';
-                    } else {
-                        $ipDetails[$key] = $ipDetailsFull[$key] ?? 'unknown';
-                    }
+        if($ip == 'unknown'){
+            $ipDetails = [
+                "country" => "unknown",
+                "countryCode" => "unknown",
+                "city" => "unknown",
+                "lat" => "unknown",
+                "lon" => "unknown",
+                "provider" => $provider,
+            ];
+        } else {
+            if($provider == "ip-api.com"){
+                try{
+                    $ipDetailsFull = json_decode(file_get_contents("http://ip-api.com/json/$ip"), true);
+                    foreach($ipKeys as $key) $ipDetails[$key] = $ipDetailsFull[$key] ?? 'unknown';
+                } catch(Exception $e) {
+                    foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
+                } catch(ErrorException $e) {
+                    foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
                 }
-            } catch(ErrorException $e) {
-                foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
-            } catch(Exception $e) {
-                foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
             }
-        }
-        if($provider == "ip2location.io"){
-            try{
-                $content = file_get_contents("https://api.ip2location.io/?key=$token&ip=$ip");
-                $ipDetailsFull = json_decode($content, true);
-                foreach($ipKeys as $key){
-                    if($key == "country"){
-                        $ipDetails[$key] = $ipDetailsFull["country_name"] ?? 'unknown';
-                    } elseif($key == "countryCode"){
-                        $ipDetails[$key] = $ipDetailsFull["country_code"] ?? 'unknown';
-                    } elseif($key == "lat"){
-                        $ipDetails[$key] = $ipDetailsFull["latitude"] ?? 'unknown';
-                    } elseif($key == "lon"){
-                        $ipDetails[$key] = $ipDetailsFull["longitude"] ?? 'unknown';
-                    } elseif($key == "city"){
-                        $ipDetails[$key] = $ipDetailsFull["city_name"] ?? 'unknown';
-                    } else {
-                        $ipDetails[$key] = $ipDetailsFull[$key] ?? 'unknown';
+            if($provider == "apiip.net"){
+                try{
+                    $content = file_get_contents("https://apiip.net/api/check?ip=$ip&accessKey=$token");
+                    $ipDetailsFull = json_decode($content, true);
+                    foreach($ipKeys as $key){
+                        if($key == "country"){
+                            $ipDetails[$key] = $ipDetailsFull["countryName"] ?? 'unknown';
+                        } elseif($key == "region"){
+                            $ipDetails[$key] = $ipDetailsFull["regionCode"] ?? 'unknown';
+                        } elseif($key == "lat"){
+                            $ipDetails[$key] = $ipDetailsFull["latitude"] ?? 'unknown';
+                        } elseif($key == "lon"){
+                            $ipDetails[$key] = $ipDetailsFull["longitude"] ?? 'unknown';
+                        } else {
+                            $ipDetails[$key] = $ipDetailsFull[$key] ?? 'unknown';
+                        }
                     }
+                } catch(ErrorException $e) {
+                    foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
+                } catch(Exception $e) {
+                    foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
                 }
-            } catch(ErrorException $e) {
-                foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
-            } catch(Exception $e) {
-                foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
             }
-        }
-        $ipDetails['provider'] = $provider;
-        $countriesAliases = json_decode(file_get_contents(geo_storage_path("/../assets/countries-aliases.json")),true);
+            if($provider == "ip2location.io"){
+                try{
+                    $content = file_get_contents("https://api.ip2location.io/?key=$token&ip=$ip");
+                    $ipDetailsFull = json_decode($content, true);
+                    foreach($ipKeys as $key){
+                        if($key == "country"){
+                            $ipDetails[$key] = $ipDetailsFull["country_name"] ?? 'unknown';
+                        } elseif($key == "countryCode"){
+                            $ipDetails[$key] = $ipDetailsFull["country_code"] ?? 'unknown';
+                        } elseif($key == "lat"){
+                            $ipDetails[$key] = $ipDetailsFull["latitude"] ?? 'unknown';
+                        } elseif($key == "lon"){
+                            $ipDetails[$key] = $ipDetailsFull["longitude"] ?? 'unknown';
+                        } elseif($key == "city"){
+                            $ipDetails[$key] = $ipDetailsFull["city_name"] ?? 'unknown';
+                        } else {
+                            $ipDetails[$key] = $ipDetailsFull[$key] ?? 'unknown';
+                        }
+                    }
+                } catch(ErrorException $e) {
+                    foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
+                } catch(Exception $e) {
+                    foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
+                }
+            }
 
-        //Check country name
-        if(!in_array($ipDetails['country'],array_keys($countriesAliases))){
-            foreach($countriesAliases as $label => $alternatives){
-                if(in_array($ipDetails['country'],$alternatives)){
-                    $ipDetails['country'] = $label;
-                    break;
+            $ipDetails['provider'] = $provider;
+            $countriesAliases = json_decode(file_get_contents(geo_storage_path("/../assets/countries-aliases.json")),true);
+
+            //Check country name
+            if(!in_array($ipDetails['country'],array_keys($countriesAliases))){
+                foreach($countriesAliases as $label => $alternatives){
+                    if(in_array($ipDetails['country'],$alternatives)){
+                        $ipDetails['country'] = $label;
+                        break;
+                    }
                 }
             }
+            if($storeIps) file_put_contents($ipPath, Yaml::dump($ipDetails));
         }
-        if($storeIps) file_put_contents($ipPath, Yaml::dump($ipDetails));
         return $ipDetails;
     }
 

@@ -30,20 +30,14 @@ class GeoAnalyticsMiddleware
 
         try {
             $uri = $server['REQUEST_URI'];
-
-            if(isset($server['HTTP_CF_CONNECTING_IP'])){
-                $ip = $server['HTTP_CF_CONNECTING_IP'];
-
-            } elseif(isset($server['HTTP_X_FORWARDED_FOR'])) {
-                $ip = $server['HTTP_X_FORWARDED_FOR'];
-
-            } elseif(isset($server['REMOTE_ADDR'])) {
-                $ip = $server['REMOTE_ADDR'];
-            } else {
-                $ip = "unknown";
-            }
+            $ip = $this->getIp();
         } catch(Exception $e) {
             $ip = "unknown";
+        }
+
+        if($ip == "127.0.0.1" || $ip == "localhost"){
+            $profile = Yaml::parseFile(geo_storage_path('profile.yaml'));
+            $ip = $profile['my_ip'] ?? 'unknown';
         }
 
         $log = geo_storage_path('requests/unprocessed/'. $timestamp . '.' . str_replace('.','_',$ip) . '.' . Str::random(15) .'.yaml');
@@ -55,5 +49,19 @@ class GeoAnalyticsMiddleware
         ]));
 
         return $response;
+    }
+
+    public function getIp(){
+        foreach (array('HTTP_CF_CONNECTING_IP','HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR') as $key){
+            if (array_key_exists($key, $_SERVER) === true){
+                foreach (explode(',', $_SERVER[$key]) as $ip){
+                    $ip = trim($ip);
+                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false){
+                        return $ip;
+                    }
+                }
+            }
+        }
+        return request()->ip();
     }
 }

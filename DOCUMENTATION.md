@@ -26,6 +26,18 @@
 
 ## How to Install
 
+#### Dependencies
+
+[Laravel Numbers Helpers](https://laravel.com/docs/11.x/helpers#numbers) is used in the dashboard and requires the installation of the **PHP intl** extension. Its installation is performed in the same way as any PHP extension required by Laravel.
+
+For example, on Ubuntu servers the installation looks like:
+
+```bash
+sudo apt install php-intl
+```
+
+#### Installation
+
 You can search for this addon in the `Tools > Addons` section of the Statamic control panel and click **install**, or run the following command from your project root:
 
 ```bash
@@ -40,16 +52,6 @@ When using Laravel's scheduler, we only need to add a single cron configuration 
 
 ```
 * * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1
-```
-
-#### Dependencies
-
-[Laravel Numbers Helpers](https://laravel.com/docs/11.x/helpers#numbers) is used in the dashboard and requires the installation of the **PHP intl** extension. Its installation is performed in the same way as any PHP extension required by Laravel.
-
-For example, on Ubuntu servers the installation looks like:
-
-```bash
-sudo apt install php-intl
 ```
 
 ## How to Use

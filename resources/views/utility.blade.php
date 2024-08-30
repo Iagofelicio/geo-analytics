@@ -173,11 +173,11 @@
                     <div class="flex flex-row items-center pb-2">
                         <div class="flex flex-row items-center pr-8">
                             <label class="text-[12px] font-bold pr-4" for="startDateTimeseries">Start:</label>
-                            <input class="text-[12px]" type="date" id="startDateTimeseries" name="startDateTimeseries">
+                            <input class="text-[12px] text-black" type="date" id="startDateTimeseries" name="startDateTimeseries">
                         </div>
                         <div class="flex flex-row items-center pr-8">
                             <label class="text-[12px] font-bold pr-4" for="endDateTimeseries">End:</label>
-                            <input class="text-[12px]" type="date" id="endDateTimeseries" name="endDateTimeseries">
+                            <input class="text-[12px] text-black" type="date" id="endDateTimeseries" name="endDateTimeseries">
                         </div>
                         <div class="flex flex-row items-center pr-8">
                             <button class="text-[12px]" onclick="filterTimeseries()"><u><a>Filter</a></u></button>

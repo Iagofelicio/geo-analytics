@@ -638,6 +638,7 @@ class GeoAnalyticsController extends Controller
     {
         $user = (posix_getpwuid(fileowner(storage_path())))['name'];
         $group = (posix_getpwuid(filegroup(storage_path())))['name'];
+        $profileLatest = Yaml::parseFile(geo_storage_path('profile.yaml'));
 
         $profile = [
             'status' => $request['status'],
@@ -646,6 +647,7 @@ class GeoAnalyticsController extends Controller
                 'token' => $request['ip_provider_token'] ?? ''
             ],
             'store_ips' => $request['store_ips'],
+            'my_ip' => $profileLatest['my_ip']
         ];
 
         file_put_contents(geo_storage_path('profile.yaml'), Yaml::dump($profile));
@@ -667,7 +669,7 @@ class GeoAnalyticsController extends Controller
         if(!$request['status']){
             Toast::info('<span style="font-size: 14px">Geo Analytics disabled.</span>')->duration(5000);
         } else {
-            $ip = $_SERVER['SERVER_ADDR'];
+            $ip = $profile['my_ip'] ?? 'unknown';
             $ipDetails = GeoAnalytics::geoIp($ip);
 
             if($ipDetails['country'] == "unknown" && $ipDetails['city'] == "unknown"){
