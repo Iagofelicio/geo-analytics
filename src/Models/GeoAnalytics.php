@@ -232,7 +232,7 @@ class GeoAnalytics
             }
 
             $ipDetails['provider'] = $provider;
-            $countriesAliases = json_decode(file_get_contents(geo_storage_path("/../assets/countries-aliases.json")),true);
+            $countriesAliases = json_decode(file_get_contents(__DIR__ . "/../../assets/countries-aliases.json"),true);
 
             //Check country name
             if(!in_array($ipDetails['country'],array_keys($countriesAliases))){
@@ -990,7 +990,7 @@ class GeoAnalytics
         if($newRequests){
             $statusList = $contents['statusList'];
 
-            $basePath = geo_storage_path("/../assets/natural-earth-data-countries-raw.geojson");
+            $basePath = __DIR__ . "/../../assets/natural-earth-data-countries-raw.geojson";
             $geojsonPath = geo_storage_path("requests/analytics/countries-$timerange.geojson");
             if($filesystem->exists($geojsonPath)){
                 $geojson = json_decode(file_get_contents($geojsonPath),true);
