@@ -72,8 +72,6 @@ class ProcessRequests extends Command
         else $listHttpStatus = [];
 
         $this->line("Finished reading DB Yaml files at ". (new DateTime())->format("Y-m-d H:i:s"));
-        $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-        $group = (posix_getpwuid(filegroup(storage_path())))['name'];
 
         if($this->option('force-update') == true){
             $dbTodayRemoved = [];
@@ -170,8 +168,7 @@ class ProcessRequests extends Command
                         if(!in_array($contents['status'],$listHttpStatus)){
                             $listHttpStatus[] = $contents['status'];
                             file_put_contents($listHttpStatusPath, Yaml::dump($listHttpStatus));
-                            chown($listHttpStatusPath, $user);
-                            chgrp($listHttpStatusPath, $group);
+                            geo_permissions_path($listHttpStatusPath);
                         }
                         $contents['statusList'] = $listHttpStatus;
                         $contents['dateStr'] = $date->format("Y-m-d H:i:s");
@@ -237,28 +234,23 @@ class ProcessRequests extends Command
             #Write updated analytics files
             if(!empty($datesDataset)){
                 file_put_contents($datesPath, json_encode($datesDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($datesPath, $user);
-                chgrp($datesPath, $group);
+                geo_permissions_path($datesPath);
             }
             if(!empty($countriesDataset)){
                 file_put_contents($countriesPath, json_encode($countriesDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($countriesPath, $user);
-                chgrp($countriesPath, $group);
+                geo_permissions_path($countriesPath);
             }
             if(!empty($citiesDataset)){
                 file_put_contents($citiesPath, json_encode($citiesDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($citiesPath, $user);
-                chgrp($citiesPath, $group);
+                geo_permissions_path($citiesPath);
             }
             if(!empty($uriDataset)){
                 file_put_contents($uriPath, json_encode($uriDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($uriPath, $user);
-                chgrp($uriPath, $group);
+                geo_permissions_path($uriPath);
             }
             if(!empty($ipDataset)){
                 file_put_contents($ipPath, json_encode($ipDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($ipPath, $user);
-                chgrp($ipPath, $group);
+                geo_permissions_path($ipPath);
             }
 
             $this->line("Finished writing files at ". (new DateTime())->format("Y-m-d H:i:s"));
@@ -309,8 +301,7 @@ class ProcessRequests extends Command
                 if(!in_array($contents['status'],$listHttpStatus)){
                     $listHttpStatus[] = $contents['status'];
                     file_put_contents($listHttpStatusPath, Yaml::dump($listHttpStatus));
-                    chown($listHttpStatusPath, $user);
-                    chgrp($listHttpStatusPath, $group);
+                    geo_permissions_path($listHttpStatusPath);
                 }
 
                 //Update DBs
@@ -384,28 +375,23 @@ class ProcessRequests extends Command
             #Write updated analytics files
             if(!empty($datesDataset)){
                 file_put_contents($datesPath, json_encode($datesDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($datesPath, $user);
-                chgrp($datesPath, $group);
+                geo_permissions_path($datesPath);
             }
             if(!empty($countriesDataset)){
                 file_put_contents($countriesPath, json_encode($countriesDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($countriesPath, $user);
-                chgrp($countriesPath, $group);
+                geo_permissions_path($countriesPath);
             }
             if(!empty($citiesDataset)){
                 file_put_contents($citiesPath, json_encode($citiesDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($citiesPath, $user);
-                chgrp($citiesPath, $group);
+                geo_permissions_path($citiesPath);
             }
             if(!empty($uriDataset)){
                 file_put_contents($uriPath, json_encode($uriDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($uriPath, $user);
-                chgrp($uriPath, $group);
+                geo_permissions_path($uriPath);
             }
             if(!empty($ipDataset)){
                 file_put_contents($ipPath, json_encode($ipDataset,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                chown($ipPath, $user);
-                chgrp($ipPath, $group);
+                geo_permissions_path($ipPath);
             }
         }
 
@@ -413,26 +399,22 @@ class ProcessRequests extends Command
         $this->line("\nUpdating DB yaml files at ". (new DateTime())->format("Y-m-d H:i:s"));
         if(!empty($dbAll)){
             file_put_contents($rawDbAllPath, Yaml::dump($dbAll));
-            chown($rawDbAllPath, $user);
-            chgrp($rawDbAllPath, $group);
+            geo_permissions_path($rawDbAllPath);
         }
 
         if(!empty($dbToday)){
             file_put_contents($rawDbTodayPath, Yaml::dump($dbToday));
-            chown($rawDbTodayPath, $user);
-            chgrp($rawDbTodayPath, $group);
+            geo_permissions_path($rawDbTodayPath);
         }
 
         if(!empty($dbWeek)){
             file_put_contents($rawDbWeekPath, Yaml::dump($dbWeek));
-            chown($rawDbWeekPath, $user);
-            chgrp($rawDbWeekPath, $group);
+            geo_permissions_path($rawDbWeekPath);
         }
 
         if(!empty($dbMonth)){
             file_put_contents($rawDbMonthPath, Yaml::dump($dbMonth));
-            chown($rawDbMonthPath, $user);
-            chgrp($rawDbMonthPath, $group);
+            geo_permissions_path($rawDbMonthPath);
         }
         $this->line("Finished updating DB yaml files at ". (new DateTime())->format("Y-m-d H:i:s"));
 

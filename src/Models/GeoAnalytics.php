@@ -21,38 +21,29 @@ class GeoAnalytics
      */
     public static function init_directories()
     {
-        $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-        $group = (posix_getpwuid(filegroup(storage_path())))['name'];
-
         if(!file_exists(geo_storage_path())){
             mkdir(geo_storage_path(), 0777, true);
-            chown(geo_storage_path(), $user);
-            chgrp(geo_storage_path(), $group);
+            geo_permissions_path(geo_storage_path());
         }
         if(!file_exists(geo_storage_path('requests'))){
             mkdir(geo_storage_path('requests'), 0777, true);
-            chown(geo_storage_path('requests'), $user);
-            chgrp(geo_storage_path('requests'), $group);
+            geo_permissions_path(geo_storage_path('requests'));
         }
         if(!file_exists(geo_storage_path('requests/unprocessed'))){
             mkdir(geo_storage_path('requests/unprocessed'), 0777, true);
-            chown(geo_storage_path('requests/unprocessed'), $user);
-            chgrp(geo_storage_path('requests/unprocessed'), $group);
+            geo_permissions_path(geo_storage_path('requests/unprocessed'));
         }
         if(!file_exists(geo_storage_path('requests/processed'))){
             mkdir(geo_storage_path('requests/processed'), 0777, true);
-            chown(geo_storage_path('requests/processed'), $user);
-            chgrp(geo_storage_path('requests/processed'), $group);
+            geo_permissions_path(geo_storage_path('requests/processed'));
         }
         if(!file_exists(geo_storage_path('requests/ips'))){
             mkdir(geo_storage_path('requests/ips'), 0777, true);
-            chown(geo_storage_path('requests/ips'), $user);
-            chgrp(geo_storage_path('requests/ips'), $group);
+            geo_permissions_path(geo_storage_path('requests/ips'));
         }
         if(!file_exists(geo_storage_path('requests/analytics'))){
             mkdir(geo_storage_path('requests/analytics'), 0777, true);
-            chown(geo_storage_path('requests/analytics'), $user);
-            chgrp(geo_storage_path('requests/analytics'), $group);
+            geo_permissions_path(geo_storage_path('requests/analytics'));
         }
     }
 
@@ -80,9 +71,6 @@ class GeoAnalytics
      */
     public static function update_cache()
     {
-        $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-        $group = (posix_getpwuid(filegroup(storage_path())))['name'];
-
         $filesystem = new Filesystem();
 
         #Update log cache
@@ -122,8 +110,7 @@ class GeoAnalytics
         ];
 
         file_put_contents(geo_storage_path('cache.yaml'), Yaml::dump($cache));
-        chown(geo_storage_path('cache.yaml'), $user);
-        chgrp(geo_storage_path('cache.yaml'), $group);
+        geo_permissions_path(geo_storage_path('cache.yaml'));
     }
 
     /**
@@ -133,9 +120,6 @@ class GeoAnalytics
      */
     public static function init_profile()
     {
-        $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-        $group = (posix_getpwuid(filegroup(storage_path())))['name'];
-
         $ipInfo = json_decode(file_get_contents('https://api.myip.com'),true);
 
         $profile = [
@@ -148,17 +132,13 @@ class GeoAnalytics
             'my_ip' => $ipInfo['ip'] ?? 'unknown'
         ];
         file_put_contents(geo_storage_path('profile.yaml'), Yaml::dump($profile));
-        chown(geo_storage_path('profile.yaml'), $user);
-        chgrp(geo_storage_path('profile.yaml'), $group);
+        geo_permissions_path(geo_storage_path('profile.yaml'));
 
         file_put_contents(geo_storage_path('tracking'),'Tracking requests');
-        chown(geo_storage_path('tracking'), $user);
-        chgrp(geo_storage_path('tracking'), $group);
+        geo_permissions_path(geo_storage_path('tracking'));
 
         file_put_contents(geo_storage_path('requests/blacklist.yaml'),[]);
-        chown(geo_storage_path('requests/blacklist.yaml'), $user);
-        chgrp(geo_storage_path('requests/blacklist.yaml'), $group);
-
+        geo_permissions_path(geo_storage_path('requests/blacklist.yaml'));
     }
 
     /**
@@ -1034,11 +1014,9 @@ class GeoAnalytics
                     }
                 }
             }
-            $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-            $group = (posix_getpwuid(filegroup(storage_path())))['name'];
             file_put_contents($geojsonPath, json_encode($geojson,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-            chown($geojsonPath, $user);
-            chgrp($geojsonPath, $group);
+            geo_permissions_path($geojsonPath);
+
         }
 
         return true;
@@ -1049,8 +1027,6 @@ class GeoAnalytics
 
         $uris200 = ["/","/home","/blog"];
         $uris404 = ["/error1","/error2","/error3"];
-        $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-        $group = (posix_getpwuid(filegroup(storage_path())))['name'];
 
         $counter = 1;
         $listCountries = [];
@@ -1117,15 +1093,11 @@ class GeoAnalytics
                 //Write fake request file
                 $filePath = geo_storage_path("requests/unprocessed/$ip-$statusCode-$n-$n2.yaml");
                 file_put_contents($filePath, Yaml::dump($yaml));
-                chown($filePath, $user);
-                chgrp($filePath, $group);
-
+                geo_permissions_path($filePath);
                 echo "\n[$counter][$n2] Status Code: $statusCode | DateTime: $dt | IP ($ip): ". $ipInfo['country'];
             }
-
             $counter++;
         }
-
         echo "\n\nFactory finished.\n\n";
         exit();
     }

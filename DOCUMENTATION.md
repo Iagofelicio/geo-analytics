@@ -37,6 +37,12 @@ For example, on Ubuntu servers the installation looks like:
 sudo apt install php-intl
 ```
 
+or:
+
+```bash
+sudo apt install php8.x-intl
+```
+
 #### Installation
 
 You can search for this addon in the `Tools > Addons` section of the Statamic control panel and click **install**, or run the following command from your project root:
@@ -77,10 +83,28 @@ It is strongly recommended to **keep IP Cache enabled**. Geographic details of I
 
 All of the following service providers can or will be used in the application. Please be aware in case firewall restrictions need to be addressed.
 
-- Default Geo IP Provider: [http://ip-api.com](http://ip-api.com) 
-- Optional Geo IP Provider: [https://apiip.net](https://apiip.net) 
-- Optional Geo IP Provider: [https://api.ip2location.io](https://api.ip2location.io) 
-- Get your public IP (useful when developing in localhost): [https://api.myip.com](https://api.myip.com) 
+- Default Geo IP Provider: [http://ip-api.com](http://ip-api.com)
+- Optional Geo IP Provider: [https://apiip.net](https://apiip.net)
+- Optional Geo IP Provider: [https://api.ip2location.io](https://api.ip2location.io)
+- Get your public IP (useful when developing in localhost): [https://api.myip.com](https://api.myip.com)
+
+## About log files
+
+All log files will be stored as JSON, GEOJSON and/or YAML files in the storage folder. The idea behind this plugin is to avoid the need to configure databases, similar to what Statamic does.
+
+Under no circumstances should you edit the files manually. All user settings and preferences should be edited on the Utility page.
+
+## Roadmap
+
+The plan is for the addon to continue receiving maintenance and updates, but efforts will depend on demand and the growth in the number of Geo Analytics users.
+
+Some future improvements that should be developed:
+
+| # | Feature                                                                                                                                                    |
+| - | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | **Recalculate the number of requests associated with blacklisted IPs.**<br />Currently, requests made before an IP is blacklisted are still counted. |
+| 2 | **URI Blacklist**<br />Bot actions can add multiple URI records to the table that can complicate traffic analysis.                                   |
+| 3 | **Periodic reports by email**<br />Enable the user to receive weekly summaries with some statistics shown on the dashboard.                               |
 
 ## Contributions
 

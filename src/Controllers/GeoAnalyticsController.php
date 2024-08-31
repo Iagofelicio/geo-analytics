@@ -780,8 +780,6 @@ class GeoAnalyticsController extends Controller
 
     public function updatePreferences(Request $request)
     {
-        $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-        $group = (posix_getpwuid(filegroup(storage_path())))['name'];
         $profileLatest = Yaml::parseFile(geo_storage_path('profile.yaml'));
 
         $profile = [
@@ -795,13 +793,11 @@ class GeoAnalyticsController extends Controller
         ];
 
         file_put_contents(geo_storage_path('profile.yaml'), Yaml::dump($profile));
-        chown(geo_storage_path('profile.yaml'), $user);
-        chgrp(geo_storage_path('profile.yaml'), $group);
+        geo_permissions_path(geo_storage_path('profile.yaml'));
 
         if($request['status']){
             file_put_contents(geo_storage_path('tracking'),'Tracking requests');
-            chown(geo_storage_path('tracking'), $user);
-            chgrp(geo_storage_path('tracking'), $group);
+            geo_permissions_path(geo_storage_path('tracking'));
         } else {
             if(file_exists(geo_storage_path('tracking'))){
                 unlink(geo_storage_path('tracking'));
