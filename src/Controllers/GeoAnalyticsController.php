@@ -716,8 +716,28 @@ class GeoAnalyticsController extends Controller
                 $countryCode = $data['countryCode'];
                 $totalRequests = array_sum($data['requests']);
                 $totalRequestsSucess = $data['requests']['200'] ?? 0;
-                $successRate = isset($data['requests']['200']) ? ($data['requests']['200'] / array_sum($data['requests'])) : 0;
+                $successRate = ($totalRequestsSucess > 0) ? ($totalRequestsSucess / array_sum($data['requests'])) : 0;
                 $contentArr[] = "$city,$country,$countryCode,$totalRequests,$totalRequestsSucess,$successRate";
+            }
+            $contents = implode("\n",$contentArr);
+
+        } elseif($datasetName == "ips") {
+            if(file_exists(geo_storage_path('requests/blacklist.yaml'))){
+                $blacklist = Yaml::parseFile(geo_storage_path('requests/blacklist.yaml'));
+            } else {
+                $blacklist = [];
+            }
+            $ipsRaw = json_decode(file_get_contents(geo_storage_path("requests/analytics/ips.json")),true);
+            $contentArr = [];
+            $contentArr[] = "ip,city,country,total_requests,total_requests_success,success_rate,status";
+            foreach($ipsRaw['all']['data'] as $ip => $data){
+                $city = $data['location']['city'];
+                $country = $data['location']['country'];
+                $totalRequests = array_sum($data['requests']);
+                $totalRequestsSucess = $data['requests']['200'] ?? 0;
+                $successRate = ($totalRequestsSucess > 0) ? ($totalRequestsSucess / array_sum($data['requests'])) : 0;
+                $status = (in_array($ip,$blacklist)) ? "blocked" : "monitoring";
+                $contentArr[] = "$ip,$city,$country,$totalRequests,$totalRequestsSucess,$successRate,$status";
             }
             $contents = implode("\n",$contentArr);
         } elseif($datasetName == "full"){
