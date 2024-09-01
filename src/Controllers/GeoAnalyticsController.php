@@ -796,12 +796,19 @@ class GeoAnalyticsController extends Controller
         geo_permissions_path(geo_storage_path('profile.yaml'));
 
         if($request['status']){
-            file_put_contents(geo_storage_path('tracking'),'Tracking requests');
-            geo_permissions_path(geo_storage_path('tracking'));
-        } else {
-            if(file_exists(geo_storage_path('tracking'))){
-                unlink(geo_storage_path('tracking'));
+            file_put_contents(geo_storage_path('enabled'),'Tracking requests');
+            geo_permissions_path(geo_storage_path('enabled'));
+
+            if(file_exists(geo_storage_path('disabled'))){
+                unlink(geo_storage_path('disabled'));
             }
+        } else {
+            if(file_exists(geo_storage_path('enabled'))){
+                unlink(geo_storage_path('enabled'));
+            }
+
+            file_put_contents(geo_storage_path('disabled'),'Not tracking requests');
+            geo_permissions_path(geo_storage_path('disabled'));
         }
 
         Toast::success('<span style="font-size: 14px">Preferences updated.</span>')->duration(5000);
@@ -810,11 +817,11 @@ class GeoAnalyticsController extends Controller
             Toast::info('<span style="font-size: 14px">Geo Analytics disabled.</span>')->duration(5000);
         } else {
             $ip = $profile['my_ip'] ?? 'unknown';
-            $ipDetails = GeoAnalytics::geoIp($ip);
+            $ipDetails = GeoAnalytics::geoIp($ip, true);
 
             if($ipDetails['country'] == "unknown" && $ipDetails['city'] == "unknown"){
                 $message = '
-                <span style="font-size: 14px; white-space: pre-line !important"><i style="margin-bottom:5px;background-color: #f44336; font-size: 12px">Unable to obtain valid information from '.$request['ip_provider_alias'].'.</i> <span>( style="font-size: 12px"Your Server IP: <b>'.$ip.'</b> | Country: <b>'.$ipDetails['country'].'</b> | City: <b>'.$ipDetails['city'].'</b>)</span></span>
+                <span style="font-size: 14px; white-space: pre-line !important"><i style="margin-bottom:5px;background-color: #f44336; font-size: 12px">Unable to obtain valid information from '.$request['ip_provider_alias'].'.</i> <span style="font-size: 12px">(Your Server IP: <b>'.$ip.'</b> | Country: <b>'.$ipDetails['country'].'</b> | City: <b>'.$ipDetails['city'].'</b>)</span></span>
                 ';
                 Toast::error($message)->duration(10000);
 

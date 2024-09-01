@@ -122,22 +122,39 @@ class GeoAnalytics
     {
         $ipInfo = json_decode(file_get_contents('https://api.myip.com'),true);
 
+        $currentProfile = [];
+        if(file_exists(geo_storage_path('profile.yaml'))){
+            $currentProfile = Yaml::parseFile(geo_storage_path('profile.yaml'));
+        }
+
+        if(!file_exists(geo_storage_path('enabled')) && !file_exists(geo_storage_path('disabled'))){
+            $status = true;
+            file_put_contents(geo_storage_path('enabled'),'Tracking requests');
+            geo_permissions_path(geo_storage_path('enabled'));
+        } elseif(file_exists(geo_storage_path('enabled'))){
+            $status = true;
+        } elseif(file_exists(geo_storage_path('disabled'))){
+            $status = false;
+        } else {
+            $status = true;
+            file_put_contents(geo_storage_path('enabled'),'Tracking requests');
+            geo_permissions_path(geo_storage_path('enabled'));
+        }
+
+        if(!file_exists(geo_storage_path('requests/blacklist.yaml'))){
+            file_put_contents(geo_storage_path('requests/blacklist.yaml'),[]);
+        }
+
         $profile = [
-            'status' => true,
-            'ip_provider' => [
-                'alias' => 'ip-api.com',
-                'token' => ''
-            ],
-            'store_ips' => true,
+            'status' => $status,
+            'ip_provider' => $currentProfile['ip_provider'] ?? ['alias' => 'ip-api.com','token' => ''],
+            'store_ips' => $currentProfile['store_ips'] ?? true,
             'my_ip' => $ipInfo['ip'] ?? 'unknown'
         ];
+
         file_put_contents(geo_storage_path('profile.yaml'), Yaml::dump($profile));
         geo_permissions_path(geo_storage_path('profile.yaml'));
 
-        file_put_contents(geo_storage_path('tracking'),'Tracking requests');
-        geo_permissions_path(geo_storage_path('tracking'));
-
-        file_put_contents(geo_storage_path('requests/blacklist.yaml'),[]);
         geo_permissions_path(geo_storage_path('requests/blacklist.yaml'));
     }
 
@@ -146,7 +163,7 @@ class GeoAnalytics
      *
      * @return boolean
      */
-    public static function geoIp($ip)
+    public static function geoIp($ip, $forceProvider = false)
     {
         $profile = Yaml::parseFile(geo_storage_path('profile.yaml'));
         $provider = $profile['ip_provider']['alias'];
@@ -154,12 +171,10 @@ class GeoAnalytics
         $storeIps = $profile['store_ips'];
         $ipKeys = ['country','countryCode','city','lat','lon'];
 
-        if($storeIps){
-            $ipPath = geo_storage_path("requests/ips/$ip.yaml");
-            if(file_exists($ipPath)){
-                $ipDetails = Yaml::parseFile($ipPath);
-                return $ipDetails;
-            }
+        $ipPath = geo_storage_path("requests/ips/$ip.yaml");
+        if(!$forceProvider && $storeIps && file_exists($ipPath)){
+            $ipDetails = Yaml::parseFile($ipPath);
+            return $ipDetails;
         }
 
         if($ip == 'unknown'){

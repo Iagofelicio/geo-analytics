@@ -22,7 +22,7 @@ class GeoAnalyticsMiddleware
     {
 
         $response = $next($request);
-        if(!file_exists(geo_storage_path('tracking'))){
+        if(!file_exists(geo_storage_path('enabled'))){
             return $response;
         }
         $server = $request->server->all();

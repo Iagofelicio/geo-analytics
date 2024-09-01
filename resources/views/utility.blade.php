@@ -1112,7 +1112,7 @@
                         tableIpEl = document.getElementById('divTableIp');
                         tableIpEl.style.display = "none";
 
-                        dateMessageEl = document.getElementById('dateIpMessage');
+                        dateMessageEl = document.getElementById('dateIpsMessage');
                         dateMessageEl.innerHTML = "";
                     }
                 })
