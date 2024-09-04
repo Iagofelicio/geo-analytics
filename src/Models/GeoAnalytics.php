@@ -319,7 +319,7 @@ class GeoAnalytics
                         $dataset[$timerange]['data'][$ip]['requests'][$status]--;
                     }
                     if(isset($dataset[$timerange]['data'][$ip])){
-                        if(array_sum(data_get($dataset[$timerange]['data'][$ip],"*.*")) == 0){
+                        if(array_sum(data_get($dataset[$timerange]['data'][$ip],"requests.*")) == 0){
                             unset($dataset[$timerange]['data'][$ip]);
                         }
                     }
@@ -343,7 +343,7 @@ class GeoAnalytics
                         $dataset[$timerange]['data'][$ip]['requests'][$status]--;
                     }
                     if(isset($dataset[$timerange]['data'][$ip])){
-                        if(array_sum(data_get($dataset[$timerange]['data'][$ip],"*.*")) == 0){
+                        if(array_sum(data_get($dataset[$timerange]['data'][$ip],"requests.*")) == 0){
                             unset($dataset[$timerange]['data'][$ip]);
                         }
                     }
@@ -367,7 +367,7 @@ class GeoAnalytics
                         $dataset[$timerange]['data'][$ip]['requests'][$status]--;
                     }
                     if(isset($dataset[$timerange]['data'][$ip])){
-                        if(array_sum(data_get($dataset[$timerange]['data'][$ip],"*.*")) == 0){
+                        if(array_sum(data_get($dataset[$timerange]['data'][$ip],"requests.*")) == 0){
                             unset($dataset[$timerange]['data'][$ip]);
                         }
                     }
@@ -396,7 +396,7 @@ class GeoAnalytics
                         $dataset[$timerange]['data'][$ip]['requests'][$status]--;
                     }
                     if(isset($dataset[$timerange]['data'][$ip])){
-                        if(array_sum(data_get($dataset[$timerange]['data'][$ip],"*.*")) == 0){
+                        if(array_sum(data_get($dataset[$timerange]['data'][$ip],"requests.*")) == 0){
                             unset($dataset[$timerange]['data'][$ip]);
                         }
                     }

@@ -870,6 +870,11 @@ class GeoAnalyticsController extends Controller
                 $filesystem->cleanDirectory($path);
             }
         }
+
+        if(file_exists(geo_storage_path("requests/db.yaml"))){
+            $filesystem->delete(geo_storage_path("requests/blacklist.yaml"));
+        }
+
         if(file_exists(geo_storage_path("requests/db.yaml"))){
             $filesystem->delete(geo_storage_path("requests/db.yaml"));
         }

@@ -79,7 +79,9 @@ Be aware that requests are stored at the time they occur, but do not trigger pro
 
 It is strongly recommended to **keep IP Cache enabled**. Geographic details of IPs that have already accessed the website once will be pre-stored to avoid consuming any quotas from Geo IP Providers.
 
-## External URLs
+## In-depth details
+
+### About external URLs
 
 All of the following service providers can or will be used in the application. Please be aware in case firewall restrictions need to be addressed.
 
@@ -88,11 +90,21 @@ All of the following service providers can or will be used in the application. P
 - Optional Geo IP Provider: [https://api.ip2location.io](https://api.ip2location.io)
 - Get your public IP (useful when developing in localhost): [https://api.myip.com](https://api.myip.com)
 
-## About log files
+### About log files
 
 All log files will be stored as JSON, GEOJSON and/or YAML files in the storage folder. The idea behind this plugin is to avoid the need to configure databases, similar to what Statamic does.
 
 Under no circumstances should you edit the files manually. All user settings and preferences should be edited on the Utility page.
+
+### About the map
+
+The country data used in the requests map is obtained from [Natural Earth](https://www.naturalearthdata.com/).
+
+Natural Earth is a public domain map dataset available at 1:10m, 1:50m, and 1:110 million scales. Featuring tightly integrated vector and raster data, with Natural Earth you can make a variety of visually pleasing, well-crafted maps with cartography or GIS software.
+
+It is unclear where each provider sources the geographic data. This may result in different country names being used or requests being sent to sources that do not exist in the country layer projected onto the map.
+
+If you encounter any issues related to country boundaries, definitions, or terms, please know that there is not much we can do. But please contact us and we may be able to find a solution for your specific problem.
 
 ## Roadmap
 
