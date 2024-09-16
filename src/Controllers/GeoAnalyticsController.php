@@ -871,8 +871,11 @@ class GeoAnalyticsController extends Controller
             }
         }
 
-        if(file_exists(geo_storage_path("requests/db.yaml"))){
+        if(file_exists(geo_storage_path("requests/blacklist.yaml"))){
             $filesystem->delete(geo_storage_path("requests/blacklist.yaml"));
+            file_put_contents(geo_storage_path('requests/blacklist.yaml'), Yaml::dump([]));
+        } else {
+            file_put_contents(geo_storage_path('requests/blacklist.yaml'), Yaml::dump([]));
         }
 
         if(file_exists(geo_storage_path("requests/db.yaml"))){

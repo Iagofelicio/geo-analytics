@@ -30,6 +30,9 @@ class GeoAnalyticsMiddleware
 
         try {
             $uri = $server['REQUEST_URI'];
+            if(strpos($uri,',')){
+                $uri = "\"" . $uri ."\"";
+            }
             $ip = $this->getIp();
         } catch(Exception $e) {
             $ip = "unknown";

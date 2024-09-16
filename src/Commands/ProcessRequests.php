@@ -75,34 +75,40 @@ class ProcessRequests extends Command
 
         if($this->option('force-update') == true){
             $dbTodayRemoved = [];
-            $dbTodayRemoved['header'] = $dbToday['header'];
-            foreach($dbToday['data'] as $idx => $data ) {
-                foreach($data as $datetime => $datasetRaw) {
-                    if($datetime < (new DateTime())->format('Y-m-d 00:00:00') || $datetime > (new DateTime())->format('Y-m-d 23:59:59')){
-                        $dbTodayRemoved['data'][$idx] = $dbToday['data'][$idx];
-                        unset($dbToday['data'][$idx]);
+            if(isset($dbToday['header']) && isset($dbToday['header'])){
+                $dbTodayRemoved['header'] = $dbToday['header'];
+                foreach($dbToday['data'] as $idx => $data ) {
+                    foreach($data as $datetime => $datasetRaw) {
+                        if($datetime < (new DateTime())->format('Y-m-d 00:00:00') || $datetime > (new DateTime())->format('Y-m-d 23:59:59')){
+                            $dbTodayRemoved['data'][$idx] = $dbToday['data'][$idx];
+                            unset($dbToday['data'][$idx]);
+                        }
                     }
                 }
             }
 
             $dbWeekRemoved = [];
-            $dbWeekRemoved['header'] = $dbWeek['header'];
-            foreach($dbWeek['data'] as $idx => $data ) {
-                foreach($data as $datetime => $datasetRaw) {
-                    if($datetime < (new DateTime())->modify("-6 days")->format('Y-m-d 00:00:00') || $datetime > (new DateTime())->format('Y-m-d 23:59:59')){
-                        $dbWeekRemoved['data'][$idx] = $dbWeek['data'][$idx];
-                        unset($dbWeek['data'][$idx]);
+            if(isset($dbWeek['header']) && isset($dbWeek['header'])){
+                $dbWeekRemoved['header'] = $dbWeek['header'];
+                foreach($dbWeek['data'] as $idx => $data ) {
+                    foreach($data as $datetime => $datasetRaw) {
+                        if($datetime < (new DateTime())->modify("-6 days")->format('Y-m-d 00:00:00') || $datetime > (new DateTime())->format('Y-m-d 23:59:59')){
+                            $dbWeekRemoved['data'][$idx] = $dbWeek['data'][$idx];
+                            unset($dbWeek['data'][$idx]);
+                        }
                     }
                 }
             }
 
             $dbMonthRemoved = [];
-            $dbMonthRemoved['header'] = $dbMonth['header'];
-            foreach($dbMonth['data'] as $idx => $data ) {
-                foreach($data as $datetime => $datasetRaw) {
-                    if($datetime < (new DateTime())->modify("-1 month")->format('Y-m-d 00:00:00') || $datetime > (new DateTime())->format('Y-m-d 23:59:59')){
-                        $dbMonthRemoved['data'][$idx] = $dbMonth['data'][$idx];
-                        unset($dbMonth['data'][$idx]);
+            if(isset($dbMonth['header']) && isset($dbMonth['header'])){
+                $dbMonthRemoved['header'] = $dbMonth['header'];
+                foreach($dbMonth['data'] as $idx => $data ) {
+                    foreach($data as $datetime => $datasetRaw) {
+                        if($datetime < (new DateTime())->modify("-1 month")->format('Y-m-d 00:00:00') || $datetime > (new DateTime())->format('Y-m-d 23:59:59')){
+                            $dbMonthRemoved['data'][$idx] = $dbMonth['data'][$idx];
+                            unset($dbMonth['data'][$idx]);
+                        }
                     }
                 }
             }
@@ -192,7 +198,7 @@ class ProcessRequests extends Command
 
                                     $secondsLeft = intval((new DateTime($endTime))->getTimestamp()) - intval((new DateTime())->getTimestamp());
                                     $this->comment("Waiting left time for free quota of ip-api.com: $secondsLeft seconds");
-                                    sleep($secondsLeft + 1);
+                                    sleep($secondsLeft + 2);
                                     $startTime = (new DateTime())->format("Y-m-d H:i:s");
                                     $endTime = (new DateTime())->modify("+1 minute")->format("Y-m-d H:i:s");
                                     $counter = 0;
@@ -201,6 +207,11 @@ class ProcessRequests extends Command
                         }
                         #Get IP Details
                         $ipDetails = GeoAnalytics::geoIp($contents['ip']);
+                        if($ipDetails['country'] == 'unknown' && $geoIpProviderIpApi){
+                            $this->comment("\nFound unknown information. Sleep for 60 seconds before continue...");
+                            sleep(60);
+                            $ipDetails = GeoAnalytics::geoIp($contents['ip'], true);
+                        }
 
                         #Update Analytics
                         $ipDataset = GeoAnalytics::updateAnalytics("ips",$ipDetails,$contents,$ipDataset,$timerange,'subtract');
@@ -218,6 +229,10 @@ class ProcessRequests extends Command
 
                 $this->line("\tFinished timerange $timerange at ". (new DateTime())->format("Y-m-d H:i:s"));
 
+            }
+            $this->line("\nUpdating geojsons at ". (new DateTime())->format("Y-m-d H:i:s"));
+            foreach(['all','today','week','month'] as $timerange){
+
                 #Update GeoJSON
                 $this->line("\tUpdating geojson for timerange $timerange at ". (new DateTime())->format("Y-m-d H:i:s"));
                 if(!empty($countriesDataset)){
@@ -225,10 +240,10 @@ class ProcessRequests extends Command
                     $contents['statusList'] = $listHttpStatus;
                     GeoAnalytics::updateAnalytics("geojson",null,$contents,$countriesDataset,$timerange,null);
                 }
-                $this->line("\tFinished geojson for timerange $timerange at ". (new DateTime())->format("Y-m-d H:i:s"));
+                $this->line("\tFinished");
             }
 
-            $this->line("Finished data processing at ". (new DateTime())->format("Y-m-d H:i:s"));
+            $this->line("\nFinished data processing at ". (new DateTime())->format("Y-m-d H:i:s"));
 
             $this->line("\nWriting files at ". (new DateTime())->format("Y-m-d H:i:s"));
             #Write updated analytics files
@@ -353,6 +368,11 @@ class ProcessRequests extends Command
                     }
                 }
                 $ipDetails = GeoAnalytics::geoIp($contents['ip']);
+                if($ipDetails['country'] == 'unknown' && $geoIpProviderIpApi){
+                    $this->comment("\nFound unknown information. Sleep for 60 seconds before continue...");
+                    sleep(60);
+                    $ipDetails = GeoAnalytics::geoIp($contents['ip'], true);
+                }
 
                 #Update Analytics
                 $ipDataset = GeoAnalytics::updateAnalytics("ips",$ipDetails,$contents,$ipDataset,null,'add');

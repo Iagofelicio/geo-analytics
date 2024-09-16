@@ -142,7 +142,7 @@ class GeoAnalytics
         }
 
         if(!file_exists(geo_storage_path('requests/blacklist.yaml'))){
-            file_put_contents(geo_storage_path('requests/blacklist.yaml'),[]);
+            file_put_contents(geo_storage_path('requests/blacklist.yaml'),Yaml::dump([]));
         }
 
         $profile = [
@@ -154,7 +154,6 @@ class GeoAnalytics
 
         file_put_contents(geo_storage_path('profile.yaml'), Yaml::dump($profile));
         geo_permissions_path(geo_storage_path('profile.yaml'));
-
         geo_permissions_path(geo_storage_path('requests/blacklist.yaml'));
     }
 
@@ -190,6 +189,10 @@ class GeoAnalytics
             if($provider == "ip-api.com"){
                 try{
                     $ipDetailsFull = json_decode(file_get_contents("http://ip-api.com/json/$ip"), true);
+                    if(!isset($ipDetailsFull['country'])){
+                        sleep(3);
+                        $ipDetailsFull = json_decode(file_get_contents("http://ip-api.com/json/$ip"), true);
+                    }
                     foreach($ipKeys as $key) $ipDetails[$key] = $ipDetailsFull[$key] ?? 'unknown';
                 } catch(Exception $e) {
                     foreach($ipKeys as $key) $ipDetails[$key] = 'unknown';
@@ -201,6 +204,11 @@ class GeoAnalytics
                 try{
                     $content = file_get_contents("https://apiip.net/api/check?ip=$ip&accessKey=$token");
                     $ipDetailsFull = json_decode($content, true);
+                    if(!isset($ipDetailsFull["countryName"])){
+                        sleep(3);
+                        $content = file_get_contents("https://apiip.net/api/check?ip=$ip&accessKey=$token");
+                        $ipDetailsFull = json_decode($content, true);
+                    }
                     foreach($ipKeys as $key){
                         if($key == "country"){
                             $ipDetails[$key] = $ipDetailsFull["countryName"] ?? 'unknown';
@@ -224,6 +232,11 @@ class GeoAnalytics
                 try{
                     $content = file_get_contents("https://api.ip2location.io/?key=$token&ip=$ip");
                     $ipDetailsFull = json_decode($content, true);
+                    if(!isset($ipDetailsFull["country_name"])){
+                        sleep(3);
+                        $content = file_get_contents("https://api.ip2location.io/?key=$token&ip=$ip");
+                        $ipDetailsFull = json_decode($content, true);
+                    }
                     foreach($ipKeys as $key){
                         if($key == "country"){
                             $ipDetails[$key] = $ipDetailsFull["country_name"] ?? 'unknown';
@@ -247,20 +260,33 @@ class GeoAnalytics
             }
 
             $ipDetails['provider'] = $provider;
-            $countriesAliases = json_decode(file_get_contents(__DIR__ . "/../../assets/countries-aliases.json"),true);
+            $ipDetails['country'] = GeoAnalytics::getCountryName($ipDetails['country']);
 
-            //Check country name
-            if(!in_array($ipDetails['country'],array_keys($countriesAliases))){
-                foreach($countriesAliases as $label => $alternatives){
-                    if(in_array($ipDetails['country'],$alternatives)){
-                        $ipDetails['country'] = $label;
-                        break;
-                    }
-                }
-            }
             if($storeIps) file_put_contents($ipPath, Yaml::dump($ipDetails));
         }
         return $ipDetails;
+    }
+
+    /**
+     * Get proper country name
+     *
+     * @return boolean
+     */
+    public static function getCountryName($alias, $aliases = null)
+    {
+        if($aliases == null){
+            $countriesAliases = json_decode(file_get_contents(__DIR__ . "/../../assets/countries-aliases.json"),true);
+        } else {
+            $countriesAliases = $aliases;
+        }
+        if(!in_array($alias,array_keys($countriesAliases))){
+            foreach($countriesAliases as $label => $alternatives){
+                if(in_array($alias,$alternatives)){
+                    return $label;
+                }
+            }
+        }
+        return $alias;
     }
 
     /**
@@ -406,10 +432,6 @@ class GeoAnalytics
             return $dataset;
         } else {
         }
-
-
-
-
     }
 
     /**
@@ -1004,14 +1026,9 @@ class GeoAnalytics
 
         if($newRequests){
             $statusList = $contents['statusList'];
-
             $basePath = __DIR__ . "/../../assets/natural-earth-data-countries-raw.geojson";
             $geojsonPath = geo_storage_path("requests/analytics/countries-$timerange.geojson");
-            if($filesystem->exists($geojsonPath)){
-                $geojson = json_decode(file_get_contents($geojsonPath),true);
-            } else {
-                $geojson = json_decode(file_get_contents($basePath),true);
-            }
+            $geojson = json_decode(file_get_contents($basePath),true);
             foreach($geojson['features'] as $key => $list){
                 $geoCountryCode = $list['properties']['countryCode'];
                 $geoCountryName = $list['properties']['country'];
@@ -1031,7 +1048,6 @@ class GeoAnalytics
             }
             file_put_contents($geojsonPath, json_encode($geojson,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
             geo_permissions_path($geojsonPath);
-
         }
 
         return true;
@@ -1039,7 +1055,6 @@ class GeoAnalytics
 
     public static function factory($range)
     {
-
         $uris200 = ["/","/home","/blog"];
         $uris404 = ["/error1","/error2","/error3"];
 
