@@ -46,6 +46,14 @@ class GeoAnalyticsController extends Controller
             "dates" => $dataJson[$timerange]['dates']
         ];
     }
+    public function get_blacklist()
+    {
+        $blacklist = Yaml::parseFile(geo_storage_path("requests/blacklist.yaml"));
+        if(empty($blacklist)){
+            return ['blacklist' => null];
+        }
+        return ['blacklist' => implode(', ',$blacklist)];
+    }
 
     public function profile()
     {
@@ -54,6 +62,11 @@ class GeoAnalyticsController extends Controller
         }
         $profile = Yaml::parseFile(geo_storage_path("profile.yaml"));
 
+        if(!file_exists(geo_storage_path("requests/http_status.yaml"))){
+            file_put_contents(geo_storage_path('requests/http_status.yaml'), Yaml::dump([200]));
+        }
+        $httpStatusCode = Yaml::parseFile(geo_storage_path("requests/http_status.yaml"));
+
         $packageLatestVersionInfo = json_decode(file_get_contents("https://repo.packagist.org/p2/iagofelicio/geo-analytics.json"), true);
         $packageLatestVersion = $packageLatestVersionInfo['packages']['iagofelicio/geo-analytics'][0]['version'];
         $packageCurrentVersion = InstalledVersions::getPrettyVersion('iagofelicio/geo-analytics');
@@ -61,6 +74,8 @@ class GeoAnalyticsController extends Controller
         $profile['version']['current'] = $packageCurrentVersion;
         $profile['version']['latest'] = $packageLatestVersion;
         $profile['version']['updated'] = ($packageCurrentVersion == $packageLatestVersion);
+        $profile['available_status_code'] = $httpStatusCode;
+        if(!isset($profile['visible_codes'])) $profile['visible_codes'] = [200];
 
         return ["profile" => $profile];
     }
@@ -84,6 +99,22 @@ class GeoAnalyticsController extends Controller
         $processedGeojsonPath = geo_storage_path("requests/analytics/countries-$timerange.geojson");
         $processedJsonPath = geo_storage_path("requests/analytics/countries.json");
         $dataJson = json_decode(file_get_contents($processedJsonPath),true);
+
+        $profile = GeoAnalytics::get_profile();
+        if(!isset($profile['visible_codes'])) $profile['visible_codes'] = [200];
+        $visibleCodes = $profile['visible_codes'];
+
+        foreach($dataJson[$timerange]['data'] as $country => $countryV){
+            foreach($countryV['requests'] as $codeK => $codeV){
+                if(!in_array($codeK,$visibleCodes)){
+                    unset($dataJson[$timerange]['data'][$country]['requests'][$codeK]);
+                }
+            }
+            if(empty($dataJson[$timerange]['data'][$country]['requests'])){
+                unset($dataJson[$timerange]['data'][$country]);
+            }
+        }
+
         if(!isset($dataJson[$timerange]['data'])){
             return ['geojson' => null];
         }
@@ -99,10 +130,23 @@ class GeoAnalyticsController extends Controller
 
         if(!file_exists($processedGeojsonPath)){
             return ["geojson" => []];
+        } else {
+            //Clean data
+            $geojsonContent = json_decode(file_get_contents($processedGeojsonPath),true);
+            foreach($geojsonContent['features'] as $key => $info){
+                $geojsonContent['features'][$key]['properties']['requests_total'] = 0;
+                foreach($info['properties']['requests'] as $code => $value){
+                    if(in_array($code,$visibleCodes)){
+                        $geojsonContent['features'][$key]['properties']['requests_total'] += $value;
+                    } else {
+                        unset($geojsonContent['features'][$key]['properties']['requests'][$code]);
+                    }
+                }
+            }
         }
 
         return [
-            "geojson" => json_decode(file_get_contents($processedGeojsonPath),true),
+            "geojson" => $geojsonContent ?? [],
             "breakpoints" => $breakpoints,
             "data" => $dataJson[$timerange]['dates']
         ];
@@ -114,13 +158,36 @@ class GeoAnalyticsController extends Controller
         if(!file_exists(geo_storage_path("requests/analytics/countries.json")) && !file_exists(geo_storage_path("requests/analytics/uris.json")) && !file_exists(geo_storage_path("requests/analytics/ips.json")) && !file_exists(geo_storage_path("requests/analytics/cities.json")) ){
             return ['cards' => null];
         }
+        $profile = GeoAnalytics::get_profile();
+        if(!isset($profile['visible_codes'])) $profile['visible_codes'] = [200];
+
+        $visibleCodes = $profile['visible_codes'];
 
         // Cards
         $countriesRaw = json_decode(file_get_contents(geo_storage_path("requests/analytics/countries.json")),true);
+        foreach($countriesRaw['all']['data'] as $country => $countryInfo){
+            foreach($countryInfo['requests'] as $codeK => $codeV){
+                if(!in_array($codeK,$visibleCodes)){
+                    unset($countriesRaw['all']['data'][$country]['requests'][$codeK]);
+                }
+            }
+            if(empty($countriesRaw['all']['data'][$country]['requests'])){
+                unset($countriesRaw['all']['data'][$country]);
+            }
+        }
         $nCountries = count(array_unique(data_get($countriesRaw['all']['data'],"*.country")));
 
-
         $citiesRaw = json_decode(file_get_contents(geo_storage_path("requests/analytics/cities.json")),true);
+        foreach($citiesRaw['all']['data'] as $city => $cityInfo){
+            foreach($cityInfo['requests'] as $codeK => $codeV){
+                if(!in_array($codeK,$visibleCodes)){
+                    unset($citiesRaw['all']['data'][$city]['requests'][$codeK]);
+                }
+            }
+            if(empty($citiesRaw['all']['data'][$city]['requests'])){
+                unset($citiesRaw['all']['data'][$city]);
+            }
+        }
         $nCities = count(array_unique(data_get($citiesRaw['all']['data'],"*.city")));
 
         $requestsAll = array_sum(data_get($countriesRaw['all']['data'],"*.requests.*"));
@@ -144,7 +211,6 @@ class GeoAnalyticsController extends Controller
             }
         }
 
-
         arsort($rankCountry);
         arsort($rankCity);
         reset($rankCountry);
@@ -154,6 +220,17 @@ class GeoAnalyticsController extends Controller
         $topCity = key($rankCity);
 
         $urisRaw = json_decode(file_get_contents(geo_storage_path("requests/analytics/uris.json")),true);
+        foreach($urisRaw['all']['data'] as $uriK => $uriV){
+            foreach($uriV['requests'] as $codeK => $codeV){
+                if(!in_array($codeK,$visibleCodes)){
+                    unset($urisRaw['all']['data'][$uriK]['requests'][$codeK]);
+                }
+            }
+            if(empty($urisRaw['all']['data'][$uriK]['requests'])){
+                unset($urisRaw['all']['data'][$uriK]);
+            }
+        }
+
         $rankUri = [];
         $nUris = count(array_keys($urisRaw['all']['data']));
         foreach($urisRaw['all']['data'] as $uri => $data){
@@ -168,6 +245,16 @@ class GeoAnalyticsController extends Controller
         $topUri = key($rankUri);
 
         $ipsRaw = json_decode(file_get_contents(geo_storage_path("requests/analytics/ips.json")),true);
+        foreach($ipsRaw['all']['data'] as $ip => $ipInfo){
+            foreach($ipInfo['requests'] as $codeK => $codeV){
+                if(!in_array($codeK,$visibleCodes)){
+                    unset($ipsRaw['all']['data'][$ip]['requests'][$codeK]);
+                }
+            }
+            if(empty($ipsRaw['all']['data'][$ip]['requests'])){
+                unset($ipsRaw['all']['data'][$ip]);
+            }
+        }
         $nIps = count(array_keys($ipsRaw['all']['data']));
         $rankIp = [];
         foreach($ipsRaw['all']['data'] as $ip => $data){
@@ -195,6 +282,7 @@ class GeoAnalyticsController extends Controller
             "unique_ips" => $nIps,
             "top_ip" => $topIp
         ];
+
         return [
             'cards' => $cardsInfo
         ];
@@ -220,31 +308,80 @@ class GeoAnalyticsController extends Controller
             ];
         }
 
+        $profile = GeoAnalytics::get_profile();
+        if(!isset($profile['visible_codes'])) $profile['visible_codes'] = [200];
+
+        $visibleCodes = $profile['visible_codes'];
+        $twoHundredOnly = false;
+        if(count($visibleCodes) == 1 && in_array(200,$visibleCodes)){
+            $twoHundredOnly = true;
+        }
+        $listCodes = [];
+        foreach($citiesRaw[$timerange]['data'] as $city => $cityInfo){
+            foreach($cityInfo['requests'] as $codeK => $codeV){
+                if(!in_array($codeK,$visibleCodes)){
+                    unset($citiesRaw[$timerange]['data'][$city]['requests'][$codeK]);
+                } else {
+                    if(!in_array($codeK,$listCodes)){
+                        $listCodes[$city][] = $codeK;
+                    }
+                }
+            }
+            if(empty($citiesRaw[$timerange]['data'][$city]['requests'])){
+                unset($citiesRaw[$timerange]['data'][$city]);
+            }
+        }
+
         // City/Countries table
         $citiesTable = [];
         $columnsCities = [];
         $columnsCities[] = ['title' => "City"];
         $columnsCities[] = ['title' => "Country"];
         $columnsCities[] = ['title' => 'Total'];
-        $columnsCities[] = ['title' => 'Total
-            <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
-                <span class="text-gray-800 dark:text-dark-150 font-medium">200</span>
-            </span>
-        '];
-        $columnsCities[] = ['title' => 'Success Rate'];
+        if(!$twoHundredOnly){
+            $columnsCities[] = ['title' => 'Total
+                <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
+                    <span class="text-gray-800 dark:text-dark-150 font-medium">200</span>
+                </span>
+            '];
+            $columnsCities[] = ['title' => 'Success Rate'];
+        }
+        $columnsCities[] = ['title' => 'HTTP Codes'];
 
         foreach($citiesRaw[$timerange]['data'] as $cityName => $data){
-            $citiesTable[] = [
-                $cityName,
-                $data['country'] . '</span>' . '
-                    <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
-                        <span class="text-gray-800 dark:text-dark-150 font-medium">'. $data['countryCode'] .'</span>
+            $listCodesPill = "";
+            foreach($listCodes[$cityName] as $code){
+                $listCodesPill .= '
+                    <span class="rtl:ml-4 ltr:mr-2 badge-pill-sm">
+                        <span class="text-gray-800 dark:text-dark-150 font-medium">'. $code .'</span>
                     </span>
-                ',
-                array_sum($data['requests']),
-                $data['requests']['200'] ?? 0,
-                isset($data['requests']['200']) ? Number::percentage(($data['requests']['200'] / array_sum($data['requests']))*100, precision: 2) : Number::percentage(0, precision: 2)
-            ];
+                ';
+            }
+            if(!$twoHundredOnly){
+                $citiesTable[] = [
+                    $cityName,
+                    $data['country'] . '</span>' . '
+                        <span class="rtl:ml-4 ltr:mr-2 badge-pill-sm">
+                            <span class="text-gray-800 dark:text-dark-150 font-medium">'. $data['countryCode'] .'</span>
+                        </span>
+                    ',
+                    array_sum($data['requests']),
+                    $data['requests']['200'] ?? 0,
+                    isset($data['requests']['200']) ? Number::percentage(($data['requests']['200'] / array_sum($data['requests']))*100, precision: 2) : Number::percentage(0, precision: 2),
+                    $listCodesPill
+                ];
+            } else {
+                $citiesTable[] = [
+                    $cityName,
+                    $data['country'] . '</span>' . '
+                        <span class="rtl:ml-4 ltr:mr-2 badge-pill-sm">
+                            <span class="text-gray-800 dark:text-dark-150 font-medium">'. $data['countryCode'] .'</span>
+                        </span>
+                    ',
+                    array_sum($data['requests']),
+                    $listCodesPill
+                ];
+            }
         }
 
         $citiesInfo = [
@@ -260,6 +397,23 @@ class GeoAnalyticsController extends Controller
         ];
     }
 
+    public function bulkUpdateBlacklistIp(Request $request)
+    {
+        $rawListStr = preg_replace('/[ \n\r]+/', ',', $request['ips']);
+        $rawListArr = explode(',',$rawListStr);
+        $rawListArr = array_filter($rawListArr);
+
+        $blacklist = [];
+        foreach($rawListArr as $item){
+            if(filter_var($item, FILTER_VALIDATE_IP)){
+                if(!in_array($item,$blacklist)){
+                    $blacklist[] = $item;
+                }
+            }
+        }
+        file_put_contents(geo_storage_path('requests/blacklist.yaml'), Yaml::dump($blacklist));
+        return true;
+    }
     public function changeIpStatus(Request $request)
     {
         $ip = $request['ip'];
@@ -308,18 +462,45 @@ class GeoAnalyticsController extends Controller
 
         $blacklist = Yaml::parseFile(geo_storage_path("requests/blacklist.yaml"));
 
+        $profile = GeoAnalytics::get_profile();
+        if(!isset($profile['visible_codes'])) $profile['visible_codes'] = [200];
+
+        $visibleCodes = $profile['visible_codes'];
+        $twoHundredOnly = false;
+        if(count($visibleCodes) == 1 && in_array(200,$visibleCodes)){
+            $twoHundredOnly = true;
+        }
+        $listCodes = [];
+        foreach($ipsRaw[$timerange]['data'] as $ip => $ipInfo){
+            foreach($ipInfo['requests'] as $codeK => $codeV){
+                if(!in_array($codeK,$visibleCodes)){
+                    unset($ipsRaw[$timerange]['data'][$ip]['requests'][$codeK]);
+                } else {
+                    if(!in_array($codeK,$listCodes)){
+                        $listCodes[$ip][] = $codeK;
+                    }
+                }
+            }
+            if(empty($ipsRaw[$timerange]['data'][$ip]['requests'])){
+                unset($ipsRaw[$timerange]['data'][$ip]);
+            }
+        }
+
         $ipsTable = [];
         $columnsIps = [];
         $columnsIps[] = ['title' => "IP"];
         $columnsIps[] = ['title' => 'Location'];
         $columnsIps[] = ['title' => 'Total'];
-        $columnsIps[] = ['title' => 'Total
-            <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
-                <span class="text-gray-800 dark:text-dark-150 font-medium">200</span>
-            </span>
-        '];
-        $columnsIps[] = ['title' => 'Success Rate'];
+        if(!$twoHundredOnly){
+            $columnsIps[] = ['title' => 'Total
+                <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
+                    <span class="text-gray-800 dark:text-dark-150 font-medium">200</span>
+                </span>
+            '];
+            $columnsIps[] = ['title' => 'Success Rate'];
+        }
         $columnsIps[] = ['title' => 'Status'];
+        $columnsIps[] = ['title' => 'HTTP Codes'];
         $columnsIps[] = ['title' => 'Actions'];
 
         $ipsTable = [];
@@ -329,7 +510,14 @@ class GeoAnalyticsController extends Controller
             } catch (DivisionByZeroError $e) {
                 $calc = 0;
             }
-
+            $listCodesPill = "";
+            foreach($listCodes[$ip] as $code){
+                $listCodesPill .= '
+                    <span class="rtl:ml-4 ltr:mr-2 badge-pill-sm">
+                        <span class="text-gray-800 dark:text-dark-150 font-medium">'. $code .'</span>
+                    </span>
+                ';
+            }
             if(isset($blacklist)){
                 if(!in_array($ip,$blacklist)){
                     $status = '
@@ -368,19 +556,35 @@ class GeoAnalyticsController extends Controller
                     </button>
                 ';
             }
-            $ipsTable[$ip] = [
-                $ip,
-                $data['location']['city'] . '<br></span>' . '
-                    <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
-                        <span class="text-gray-800 dark:text-dark-150 font-medium">'. $data['location']['country'] .'</span>
-                    </span>
-                ',
-                array_sum($data['requests']),
-                $data['requests']['200'] ?? 0,
-                Number::percentage($calc, precision: 2),
-                $status,
-                "$btn1"
-            ];
+            if(!$twoHundredOnly){
+                $ipsTable[$ip] = [
+                    $ip,
+                    $data['location']['city'] . '<br></span>' . '
+                        <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
+                            <span class="text-gray-800 dark:text-dark-150 font-medium">'. $data['location']['country'] .'</span>
+                        </span>
+                    ',
+                    array_sum($data['requests']),
+                    $data['requests']['200'] ?? 0,
+                    Number::percentage($calc, precision: 2),
+                    $status,
+                    $listCodesPill,
+                    "$btn1",
+                ];
+            } else {
+                $ipsTable[$ip] = [
+                    $ip,
+                    $data['location']['city'] . '<br></span>' . '
+                        <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
+                            <span class="text-gray-800 dark:text-dark-150 font-medium">'. $data['location']['country'] .'</span>
+                        </span>
+                    ',
+                    array_sum($data['requests']),
+                    $status,
+                    $listCodesPill,
+                    "$btn1",
+                ];
+            }
         }
 
         $ipsInfo = [
@@ -392,73 +596,6 @@ class GeoAnalyticsController extends Controller
             'ips' => $ipsInfo,
             'dates' => $ipsRaw[$timerange]['dates'],
             'download' => $ipsRaw['all']['data'] ? true : false
-        ];
-    }
-
-    public function datesData($timerange)
-    {
-
-        if(!file_exists(geo_storage_path("requests/analytics/dates.json"))){
-            return [
-                'dates' => null,
-                'download' => false
-            ];
-        }
-
-        $datesRaw = json_decode(file_get_contents(geo_storage_path("requests/analytics/dates.json")),true);
-        if(!isset($datesRaw[$timerange]['data'])){
-            return [
-                'dates' => null,
-                'download' => $datesRaw['all']['data'] ? true : false
-            ];
-        }
-
-        $datesTable = [];
-        $columnsDate = [];
-        $columnsDate[] = ['title' => "Datetime"];
-        $columnsDate[] = ['title' => 'Total'];
-        $columnsDate[] = ['title' => 'Total
-            <span class="rtl:ml-4 ltr:mr-4 badge-pill-sm">
-                <span class="text-gray-800 dark:text-dark-150 font-medium">200</span>
-            </span>
-        '];
-        $columnsDate[] = ['title' => 'Success Rate'];
-
-        $datasetHourly = [];
-        foreach($datesRaw[$timerange]['data'] as $date => $data){
-            $tmpDate = (new DateTime($date))->format("Y-m-d H:00:00");
-            if(isset($datasetHourly[$tmpDate])){
-                $datasetHourly[$tmpDate]['total'] = $datasetHourly[$tmpDate]['total'] + array_sum(data_get($data,"requests.*.total"));
-                $datasetHourly[$tmpDate]['200'] = $datasetHourly[$tmpDate]['200'] + ($data['requests']['200']['total'] ?? 0);
-            } else {
-                $datasetHourly[$tmpDate]['total'] = array_sum(data_get($data,"requests.*.total"));
-                $datasetHourly[$tmpDate]['200'] = ($data['requests']['200']['total'] ?? 0);
-            }
-        }
-        ksort($datasetHourly);
-        foreach($datasetHourly as $date => $values){
-            try{
-                $calc = ($values[200] / $values['total'])*100;
-            } catch (DivisionByZeroError $e) {
-                $calc = 0;
-            }
-            $datesTable[$date] = [
-                '<span class="text-[12px]"><b>' . (new DateTime($date))->format("Y-m-d") .'</b>&nbsp;<span class="text-[10px]">' . (new DateTime($date))->format("H:00")  .' to ' . (new DateTime($date))->modify("+59 minutes")->format("H:59") . '</span></span>',
-                $values['total'],
-                $values[200],
-                Number::percentage($calc, precision: 2)
-            ];
-        }
-
-        $datesInfo = [
-            "columns" => $columnsDate,
-            "data" => array_values($datesTable),
-            "sorting" => [[0,'desc']]
-        ];
-        return [
-            'dates' => $datesInfo,
-            'datesRange' => $datesRaw[$timerange]['dates'],
-            'download' => $datesRaw['all']['data'] ? true : false
         ];
     }
 
@@ -597,6 +734,21 @@ class GeoAnalyticsController extends Controller
                 'download' => $urisRaw['all']['data'] ? true : false
             ];
         }
+        $profile = GeoAnalytics::get_profile();
+        if(!isset($profile['visible_codes'])) $profile['visible_codes'] = [200];
+
+        $visibleCodes = $profile['visible_codes'];
+        foreach($urisRaw[$timerange]['data'] as $uriK => $uriV){
+            foreach($uriV['requests'] as $codeK => $codeV){
+                if(!in_array($codeK,$visibleCodes)){
+                    unset($urisRaw[$timerange]['data'][$uriK]['requests'][$codeK]);
+                }
+            }
+            if(empty($urisRaw[$timerange]['data'][$uriK]['requests'])){
+                unset($urisRaw[$timerange]['data'][$uriK]);
+            }
+        }
+
         $urisTable = [];
         $columnsUri = [];
         $columnsUri[] = ['title' => "URI"];
@@ -622,7 +774,7 @@ class GeoAnalyticsController extends Controller
         $urisInfo = [
             "columns" => $columnsUri,
             "data" => $urisTable,
-            "sorting" => [[2,'desc']]
+            "sorting" => [[2,'desc']],
         ];
         return [
             'uris' => $urisInfo,
@@ -646,65 +798,6 @@ class GeoAnalyticsController extends Controller
                     $countries = count(array_keys($info['countries']));
                     $contentArr[] = "$uri,$code,$total,$countries,".implode("; ",array_keys($info['countries']));
                 }
-            }
-            $contents = implode("\n",$contentArr);
-        } elseif($datasetName == "dates") {
-            $datesRaw = json_decode(file_get_contents(geo_storage_path("requests/analytics/dates.json")),true);
-            krsort($datesRaw['all']['data']);
-
-            $tmpDates = [];
-            $allDates = [];
-            $codes = $datesRaw['all']['available_status_code'];
-            foreach($codes as $code){
-                foreach($datesRaw['all']['data'] as $datetime => $info){
-                    $auxDate = (new DateTime($datetime))->format("Y-m-d");
-                    if(!in_array($auxDate,$allDates)){
-                        $allDates[] = $auxDate;
-                    }
-                    if(isset($tmpDates[$code][$auxDate])){
-                        $tmpDates[$code][$auxDate] += $info['requests'][$code]['total'] ?? 0;
-                    } else {
-                        $tmpDates[$code][$auxDate] = $info['requests'][$code]['total'] ?? 0;
-                    }
-                }
-                ksort($tmpDates[$code]);
-            }
-            $allDates = array_values($allDates);
-
-            sort($allDates);
-            foreach($codes as $code){
-                foreach($allDates as $dt){
-                    if(!isset($tmpDates[$code][$dt])){
-                        $tmpDates[$code][$dt] = 0;
-                    }
-                }
-                ksort($tmpDates[$code]);
-            }
-            $dataset = [];
-            $header = [];
-            $header[] = "date";
-            $idx = 0;
-            foreach($tmpDates as $code => $info){
-                $header[] = "http-$code";
-                foreach($info as $datetime => $total){
-                    $dataset["datasets"][$idx]['data'][] = $total;
-                    $dataset["datasets"][$idx]['label'] = "HTTP $code";
-                }
-                $idx++;
-            }
-            $header[] = "total";
-            $dataset["labels"] = $allDates;
-            $contentArr[] = implode(',',$header);
-            foreach($dataset["labels"] as $key => $date){
-                $line = [];
-                $line[] = $date;
-                $sum = 0;
-                foreach($codes as $idx => $code){
-                    $line[] = $dataset["datasets"][$idx]['data'][$key];
-                    $sum += $dataset["datasets"][$idx]['data'][$key];
-                }
-                $line[] = $sum;
-                $contentArr[] = implode(',',$line);
             }
             $contents = implode("\n",$contentArr);
         } elseif($datasetName == "cities") {
@@ -801,7 +894,6 @@ class GeoAnalyticsController extends Controller
     public function updatePreferences(Request $request)
     {
         $profileLatest = Yaml::parseFile(geo_storage_path('profile.yaml'));
-
         $profile = [
             'status' => $request['status'],
             'ip_provider' => [
@@ -809,7 +901,8 @@ class GeoAnalyticsController extends Controller
                 'token' => $request['ip_provider_token'] ?? ''
             ],
             'store_ips' => $request['store_ips'],
-            'my_ip' => $profileLatest['my_ip']
+            'my_ip' => $profileLatest['my_ip'],
+            'visible_codes' => $request['visible_codes'] ?? [200]
         ];
 
         file_put_contents(geo_storage_path('profile.yaml'), Yaml::dump($profile));
@@ -896,6 +989,7 @@ class GeoAnalyticsController extends Controller
 
         if(file_exists(geo_storage_path("requests/http_status.yaml"))){
             $filesystem->delete(geo_storage_path("requests/http_status.yaml"));
+            file_put_contents(geo_storage_path('requests/http_status.yaml'), Yaml::dump([200]));
         }
 
         GeoAnalytics::update_cache();

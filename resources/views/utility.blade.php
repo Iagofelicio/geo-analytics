@@ -226,7 +226,7 @@
                     No data
                 </div>
                 <div id="divTableUri" style="display: none">
-                    <table id="tableUri" class="display">
+                    <table id="tableUri" class="display" style="width:100%; table-layout: fixed; word-wrap:break-word">
                         <thead>
                         </thead>
                         <tbody class="text-[12px]">
@@ -271,7 +271,7 @@
                     No data
                 </div>
                 <div id="divTableCity" style="display: none">
-                    <table id="tableCity" class="display">
+                    <table id="tableCity" class="display" style="width:100%; table-layout: fixed; word-wrap:break-word">
                         <thead>
                         </thead>
                         <tbody class="text-[12px]">
@@ -305,6 +305,9 @@
                         </div>
                     </div>
                     <div class="w-[25%] text-[11px] text-right">
+                        <div>
+                            <a onclick="toggleDivBlacklistedIps('show')" title="Show/Update list of IPs blacklisted"><u>IPs Blacklist</u></a>
+                        </div>
                         <div id="divDownloadIps" style="display: none">
                             <a href="{{route('statamic.cp.download',['ips'])}}" title="Download all data"><u>Download</u></a>
                         </div>
@@ -312,11 +315,21 @@
                 </div>
             </div>
             <div class="card-body text-[13px]">
+                <div id="divIpBlacklist" style="display: none" class="pb-4">
+                    <div class="text-left text-[12px] font-bold">Blacklisted IPs</div>
+                    <a onclick="toggleDivBlacklistedIps('hide')" class="text-left text-[11px]"><u>Done</u></a>
+                    <a onclick="updateBlackListedIps('update')" class="text-left text-[11px] pl-2"><u>Update</u></a>
+                    <div class="pt-2">
+                        <textarea id="blacklistIps" class="w-full p-2 border-2 bg-transparent rounded-md dark:border-dark-900 text-left text-[12px]" rows="3"></textarea>
+                    </div>
+                    <div class="text-left text-[10px] text-gray-600">Separate IPs with comma (,) or new line</div>
+                </div>
+
                 <div id="divIpsEmpty" style="display: none" class="text-center text-[12px]">
                     No data
                 </div>
                 <div id="divTableIp" style="display: none">
-                    <table id="tableIp" class="display">
+                    <table id="tableIp" class="display" style="width:100%; table-layout: fixed; word-wrap:break-word">
                         <thead>
                         </thead>
                         <tbody class="text-[12px]">
@@ -330,53 +343,7 @@
         </div>
     </div>
 
-    <div class="pb-4">
-        <div class="mt-3 card">
-            <div class="card-header pb-4">
-                <div class="flex flex-row pb-2">
-                    <div class="w-[75%]">
-                        <div class="flex">
-                            <b>Requests by hour</b>&nbsp;&nbsp;
-                            <span
-                                title="This table provides a granular view of website traffic by hour, highlighting the volume of requests, successful requests, and overall success rate for each hour. It helps in identifying peak traffic times, success rates, and potential performance issues."
-                                class="self-center rounded-full border border-gray-200 text-gray-600 px-[4px] py-[0px] text-[10px]">?
-                            </span>
-                        </div>
-                        <div class="text-[11px] pb-2">
-                            <button onclick="getDatesData('all', true)"><span id="dateSpan-all">All</span></button>&nbsp;&nbsp;
-                            <button onclick="getDatesData('today', true)"><span id="dateSpan-today">Today</span></button>&nbsp;&nbsp;
-                            <button onclick="getDatesData('week', true)"><span id="dateSpan-week">7 Days</span></button>&nbsp;&nbsp;
-                            <button onclick="getDatesData('month', true)"><span id="dateSpan-month">30 Days</span></button>&nbsp;&nbsp;
-                        </div>
-                    </div>
-                    <div class="w-[25%] text-[11px] text-right">
-                        <div id="divDownloadDates" style="display: none">
-                            <a href="{{route('statamic.cp.download',['dates'])}}" title="Download all data"><u>Download</u></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body text-[13px]">
-                <div id="divDatesEmpty" style="display: none" class="text-center text-[12px]">
-                    No data
-                </div>
-                <div id="divTableDate" style="display: none">
-                    <table id="tableDate" class="display">
-                        <thead>
-                        </thead>
-                        <tbody class="text-[12px]">
-                        </tbody>
-                    </table>
-                </div>
-                <div class="text-[12px] pt-4">
-                    <p><i id="dateDatesMessage"></i></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="mt-3 card p-0">
-
         <div class="p-4 bg-gray-200 dark:bg-dark-700 border-t dark:border-dark-900">
             <div class="card-body pb-4">
                 <p><b>Addon Information</b></p>
@@ -558,6 +525,20 @@
                     <input onclick="changeAddonStatus()" type="checkbox" id="addonStatus" disabled><span class="pl-2" id="addonStatusMsg"></span>
                 </div>
             </div>
+
+            <div class="text-sm text-gray dark:text-dark-150 flex flex-col pt-6">
+                <div class="rtl:pl-8 ltr:pr-8">
+                    <h3 class="font-bold text-[14px]">HTTP Status Code</h3>
+                    <p class="text-gray dark:text-dark-150 text-sm my-2">You can choose which http status code to show in addition to code 200. The metrics will update to include or exclude your preferences.</p>
+                    <div id="statusCodeOptions">
+                        <span class="pr-4">
+                            <input id="avCode-200" type="checkbox" checked disabled>
+                            <span class="pl-2">200</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -571,6 +552,7 @@
             inptApiIpNetTokenEl = document.getElementById('apiip.netToken');
             inptIp2LocationIoTokenEl = document.getElementById('ip2location.ioToken');
             ipCacheStatusEl = document.getElementById('ipCacheStatus');
+            divStatusCode = document.getElementById('statusCodeOptions');
 
             if(action == "edit"){
                 btnEditEl.style.display = "none";
@@ -587,6 +569,13 @@
 
                 if(inptIp2LocationIoEl.checked){
                     inptIp2LocationIoTokenEl.style.display = "block";
+                }
+
+                for (const child of divStatusCode.children) {
+                    inputEl = child.firstElementChild;
+                    if(inputEl.id != "avCode-200"){
+                        inputEl.disabled = false;
+                    }
                 }
             }
 
@@ -626,11 +615,22 @@
                     ip_provider_token = inptIp2LocationIoTokenInputEl.value;
                 }
 
+                var updateVisibleCode = [];
+                for (const child of divStatusCode.children) {
+                    inputEl = child.firstElementChild;
+                    inputEl.disabled = true;
+                    if(inputEl.checked){
+                        updateVisibleCode.push(parseInt(inputEl.id.replace('avCode-', '')));
+                    }
+                }
+
                 axios.post('{{ route("statamic.cp.updatePreferences") }}', {
                     status: addonStatusEl.checked,
                     store_ips: ipCacheStatusEl.checked,
                     ip_provider_alias: ip_provider_alias,
-                    ip_provider_token: ip_provider_token
+                    ip_provider_token: ip_provider_token,
+                    visible_codes: updateVisibleCode
+
                 })
                 .then(function (response) {
                     if(response.data == true){
@@ -720,6 +720,8 @@
                     inptIp2LocationIoEl = document.getElementById('ip2location.io');
                     inptIp2LocationIoTokenInputEl = document.getElementById('ip2location.ioTokenInput');
 
+                    divStatusCode = document.getElementById('statusCodeOptions');
+
                     addonVersionHeaderMsgEl = document.getElementById('versionGeoAnalytics');
 
                     if(response.data.profile != null){
@@ -770,6 +772,33 @@
                         }
                         changeIpCache();
                         changeAddonStatus();
+
+                        //Update list of status code
+                        for (const av_code of response.data.profile.available_status_code) {
+                            if(av_code != 200){
+                                var outterSpan = document.createElement('span');
+                                outterSpan.className = "pr-4";
+
+                                var inputCode = document.createElement('input');
+                                inputCode.type = "checkbox";
+                                inputCode.disabled = true;
+                                inputCode.id = `avCode-${av_code}`;
+
+                                if (response.data.profile.visible_codes.indexOf(av_code) === -1) {
+                                    inputCode.checked = false;
+                                } else {
+                                    inputCode.checked = true;
+                                }
+
+                                var inputCodeAlias = document.createElement('span');
+                                inputCodeAlias.className = "pl-2";
+                                inputCodeAlias.innerText = av_code;
+
+                                outterSpan.appendChild(inputCode);
+                                outterSpan.appendChild(inputCodeAlias);
+                                divStatusCode.appendChild(outterSpan);
+                            }
+                        }
                     } else {
                         inptIpApiComEl.checked = true;
                         inptApiIpNetEl.checked = false;
@@ -937,7 +966,8 @@
                                 columns: response.data.uris.columns,
                                 data: response.data.uris.data,
                                 scrollX: true,
-                                order: response.data.uris.sorting
+                                order: response.data.uris.sorting,
+                                responsive: true
                             });
 
                         } else {
@@ -945,7 +975,8 @@
                                 columns: response.data.uris.columns,
                                 data: response.data.uris.data,
                                 scrollX: true,
-                                order: response.data.uris.sorting
+                                order: response.data.uris.sorting,
+                                responsive: true
                             });
                         }
                     } else {
@@ -1123,81 +1154,6 @@
             );
         }
 
-        function getDatesData(timerange, destroy){
-            if(timerange == 'all'){
-                route = "{{ route('statamic.cp.datesData',['all']) }}"
-            } else if(timerange == 'today') {
-                route = "{{ route('statamic.cp.datesData',['today']) }}"
-            } else if(timerange == 'week') {
-                route = "{{ route('statamic.cp.datesData',['week']) }}"
-            } else if(timerange == 'month') {
-                route = "{{ route('statamic.cp.datesData',['month']) }}"
-            }
-            timerangeArr = ['all','today','week','month'];
-            timerangeArr.forEach(el => {
-                span = document.getElementById(`dateSpan-${el}`)
-                if(el == timerange){
-                    span.style.fontWeight = "bold"
-                } else {
-                    span.style.fontWeight = "normal"
-                }
-            });
-
-            axios.get(route)
-                .then(function (response) {
-                    if(response.data.download == true){
-                        downDatesEl = document.getElementById('divDownloadDates');
-                        downDatesEl.style.display = "block";
-
-                    } else {
-                        downDatesEl = document.getElementById('divDownloadDates');
-                        downDatesEl.style.display = "none";
-                    }
-
-                    if(response.data.dates != null){
-                        tableDateEmptyEl = document.getElementById('divDatesEmpty');
-                        tableDateEmptyEl.style.display = "none";
-
-                        tableDateEl = document.getElementById('divTableDate');
-                        tableDateEl.style.display = "block";
-
-                        dateMessageEl = document.getElementById('dateDatesMessage');
-                        dateMessageEl.innerHTML = `Data from <b>${response.data.datesRange.start}</b> to <b>${response.data.datesRange.end}</b>`;
-                        if(destroy){
-                            tableDate.clear().destroy();
-                            tableDate = new DataTable('#tableDate', {
-                                columns: response.data.dates.columns,
-                                data: response.data.dates.data,
-                                scrollX: true,
-                                order: response.data.dates.sorting
-                            });
-
-                        } else {
-                            tableDate = new DataTable('#tableDate', {
-                                columns: response.data.dates.columns,
-                                data: response.data.dates.data,
-                                scrollX: true,
-                                order: response.data.dates.sorting
-                            });
-                        }
-                    } else {
-                        tableDateEmptyEl = document.getElementById('divDatesEmpty');
-                        tableDateEmptyEl.style.display = "block";
-
-                        tableDateEl = document.getElementById('divTableDate');
-                        tableDateEl.style.display = "none";
-
-                        dateMessageEl = document.getElementById('dateDatesMessage');
-                        dateMessageEl.innerHTML = "";
-                    }
-                })
-                .catch(function (error) {
-                    console.error(error);
-                })
-                .finally(function () {}
-            );
-        }
-
         function filterTimeseries(){
             var start = "default";
             var end = "default";
@@ -1282,6 +1238,47 @@
             });
         }
 
+        function updateBlackListedIps(action){
+            textAreaEl = document.getElementById(`blacklistIps`);
+
+            if(action == 'load'){
+                axios.get("{{route('statamic.cp.blacklist')}}")
+                    .then(function (response) {
+                        if(response.data.blacklist != null){
+                            textAreaEl.value = response.data.blacklist;
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                    })
+                    .finally(function () {}
+                );
+            }
+
+            if(action == 'update'){
+                axios.post('{{ route("statamic.cp.bulkUpdateBlacklistIp") }}', {
+                    ips: textAreaEl.value,
+                })
+                .then(function (response) {
+                    if(response.data == true){
+                        window.location.reload();
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            }
+        }
+
+        function toggleDivBlacklistedIps(action){
+            divBlackListEl = document.getElementById(`divIpBlacklist`);
+            if(action == "show"){
+                divBlackListEl.style.display = "block";
+            } else {
+                divBlackListEl.style.display = "none";
+            }
+        }
+
         function plotMap(timerange){
             if(timerange == 'all'){
                 route = "{{ route('statamic.cp.geojsonDates',['all']) }}"
@@ -1346,10 +1343,10 @@
             plotMap('all');
             getUriData('all', false);
             getCitiesData('all', false);
-            getDatesData('all', false);
             getIpsData('all', false);
             getCache();
             getProfile();
+            updateBlackListedIps('load');
         });
     </script>
 @stop

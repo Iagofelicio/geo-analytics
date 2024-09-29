@@ -8,14 +8,15 @@ Route::get('/geo-analytics/geojsonData/{timerange}', [GeoAnalyticsController::cl
 Route::get('/geo-analytics/geojsonDates/{timerange}', [GeoAnalyticsController::class, 'geojsonDates'])->name("geojsonDates");
 Route::get('/geo-analytics/cardsData', [GeoAnalyticsController::class, 'cardsData'])->name("cardsData");
 Route::get('/geo-analytics/citiesData/{timerange}', [GeoAnalyticsController::class, 'citiesData'])->name("citiesData");
-Route::get('/geo-analytics/datesData/{timerange}', [GeoAnalyticsController::class, 'datesData'])->name("datesData");
 Route::get('/geo-analytics/ipsData/{timerange}', [GeoAnalyticsController::class, 'ipsData'])->name("ipsData");
 Route::post('/geo-analytics/changeIpStatus', [GeoAnalyticsController::class, 'changeIpStatus'])->name("changeIpStatus");
+Route::post('/geo-analytics/bulkUpdateBlacklistIp', [GeoAnalyticsController::class, 'bulkUpdateBlacklistIp'])->name("bulkUpdateBlacklistIp");
 Route::get('/geo-analytics/uriData/{timerange}', [GeoAnalyticsController::class, 'uriData'])->name("uriData");
 Route::post('/geo-analytics/timeseriesData', [GeoAnalyticsController::class, 'timeseriesData'])->name("timeseriesData");
 Route::get('/geo-analytics/download/{datasetName}', [GeoAnalyticsController::class, 'download'])->name("download");
 Route::get('/geo-analytics/cache', [GeoAnalyticsController::class, 'cache'])->name("cache");
 Route::get('/geo-analytics/profile', [GeoAnalyticsController::class, 'profile'])->name("profile");
+Route::get('/geo-analytics/blacklist', [GeoAnalyticsController::class, 'get_blacklist'])->name("blacklist");
 Route::post('/geo-analytics/clearIpCache', [GeoAnalyticsController::class, 'clearIpCache'])->name("clearIpCache");
 Route::post('/geo-analytics/clearLogCache', [GeoAnalyticsController::class, 'clearLogCache'])->name("clearLogCache");
 Route::get('/geo-analytics/resetAppData', [GeoAnalyticsController::class, 'resetAppData'])->name("resetAppData");

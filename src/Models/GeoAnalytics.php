@@ -114,6 +114,16 @@ class GeoAnalytics
     }
 
     /**
+     * Get application profile
+     *
+     * @return boolean
+     */
+    public static function get_profile()
+    {
+        return Yaml::parseFile(geo_storage_path('profile.yaml'));
+    }
+
+    /**
      * Initiate application profile
      *
      * @return boolean
@@ -149,7 +159,8 @@ class GeoAnalytics
             'status' => $status,
             'ip_provider' => $currentProfile['ip_provider'] ?? ['alias' => 'ip-api.com','token' => ''],
             'store_ips' => $currentProfile['store_ips'] ?? true,
-            'my_ip' => $ipInfo['ip'] ?? 'unknown'
+            'my_ip' => $ipInfo['ip'] ?? 'unknown',
+            'visible_codes' => $currentProfile['visible_codes'] ?? [200]
         ];
 
         file_put_contents(geo_storage_path('profile.yaml'), Yaml::dump($profile));

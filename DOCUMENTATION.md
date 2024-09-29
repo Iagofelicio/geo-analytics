@@ -15,7 +15,6 @@
 - A chart that visualizes daily request over time, categorized by HTTP status code.
 - A detailed overview of website traffic at the URI level, highlighting popular resources, geographic reach, and overall performance. It helps identify high-traffic URIs, common errors, and opportunities for optimization.
 - A breakdown of website traffic by city and country, highlighting the volume of requests, successful requests, and overall success rate for each location. It helps in identifying top performing cities and countries, as well as potential issues based on geographic location.
-- A granular view of website traffic by hour, highlighting the volume of requests, successful requests, and overall success rate for each hour. It helps in identifying peak traffic times, success rates, and potential performance issues.
 
 **In addition, it allows the user to:**
 
@@ -23,7 +22,8 @@
 - Manage application cache.
 - Choose between Geo IP Providers options (currently, 3 options are offered).
 - Pause tracking of website requests and restore when necessary without removing the addon.
-- Block and enable monitoring of specific IPs
+- Block and enable tracking of specific IPs
+- Include or hide requests with different HTTP Status codes
 
 ## How to Install
 
@@ -105,18 +105,6 @@ Natural Earth is a public domain map dataset available at 1:10m, 1:50m, and 1:11
 It is unclear where each provider sources the geographic data. This may result in different country names being used or requests being sent to sources that do not exist in the country layer projected onto the map.
 
 If you encounter any issues related to country boundaries, definitions, or terms, please know that there is not much we can do. But please contact us and we may be able to find a solution for your specific problem.
-
-## Roadmap
-
-The plan is for the addon to continue receiving maintenance and updates, but efforts will depend on demand and the growth in the number of Geo Analytics users.
-
-Some future improvements that should be developed:
-
-| # | Feature                                                                                                                                                    |
-| - | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 | **Recalculate the number of requests associated with blacklisted IPs.**<br />Currently, requests made before an IP is blacklisted are still counted. |
-| 2 | **URI Blacklist**<br />Bot actions can add multiple URI records to the table that can complicate traffic analysis.                                   |
-| 3 | **Periodic reports by email**<br />Enable the user to receive weekly summaries with some statistics shown on the dashboard.                               |
 
 ## Contributions
 
