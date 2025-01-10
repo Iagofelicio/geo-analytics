@@ -24,10 +24,13 @@ if (! function_exists('geo_permissions_path')) {
     {
 
         $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-        $group = (posix_getpwuid(filegroup(storage_path())))['name'];
+        $group = (posix_getpwuid(filegroup(storage_path())));
 
         chown($path, $user);
-        chgrp($path, $group);
+
+        if (is_array($group) && array_key_exists('name', $group)) {
+            chgrp($path, $group['name']);
+        }
     }
 }
 
