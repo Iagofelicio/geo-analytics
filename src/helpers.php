@@ -22,12 +22,17 @@ if (! function_exists('geo_permissions_path')) {
      */
     function geo_permissions_path($path)
     {
+        if(!function_exists('posix_getpwuid')){
+            throw new \Exception("The required function 'posix_getpwuid' is missing. Please search for a solution to enable it if possible. For Windows users, consider using WSL (Windows Subsystem for Linux).");
+        }
 
-        $user = (posix_getpwuid(fileowner(storage_path())))['name'];
-        $group = (posix_getpwuid(filegroup(storage_path())))['name'];
+        $user = posix_getpwuid(fileowner(storage_path()));
+        chown($path, $user['name']);
 
-        chown($path, $user);
-        chgrp($path, $group);
+        $group = posix_getpwuid(filegroup(storage_path()));
+        if(is_array($group) && array_key_exists('name', $group)) {
+            chgrp($path, $group['name']);
+        }
     }
 }
 
